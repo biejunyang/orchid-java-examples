@@ -1,0 +1,20 @@
+server:
+  port: 8085
+  servlet:
+    context-path: /client1
+    session:
+      cookie:
+        name: CLIENT1_SESSION
+
+
+security:
+  oauth2:
+    client:
+      client-id: client1
+      client-secret: client1
+      access-token-uri: http://localhost:8080/oauth/token
+      user-authorization-uri: http://localhost:8080/oauth/authorize
+    resource:
+      token-info-uri: http://localhost:8080/oauth/check_token
+#      grant-type: client_credentials
+

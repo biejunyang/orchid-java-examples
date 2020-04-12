@@ -1,0 +1,15 @@
+server:
+  port:
+
+spring:
+#  数据源信息
+#  datasource:
+#    url: jdbc:mysql://10.225.12.98:3306/test?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
+#    username: root
+#    password: root
+#    driver-class-name: com.mysql.jdbc.Driver
+  security:
+#    配置默认用户信息
+    user:
+      name: admin
+      password: admin

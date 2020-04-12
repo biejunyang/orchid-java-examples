@@ -1,0 +1,27 @@
+server:
+  port: 8083
+  servlet:
+    context-path: /client
+    session:
+      cookie:
+        name: OAUTH2SESSION
+security:
+  oauth2:
+    client:
+      client-id: client
+      client-secret: client
+      access-token-uri: http://localhost:8080/oauth/token
+      user-authorization-uri: http://localhost:8080/oauth/authorize
+#      grant-type: client_credentials
+#      authentication-scheme: form
+#    resource:
+#      jwt:
+#        key-uri: http://localhost:8080/oauth/token_key
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  security:
+    user:
+      name: admin
+      password: 123456

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.orchid.examples.repeatedinsert.dao.TestDao">
+
+
+    <insert id="insertTest" useGeneratedKeys="true" keyProperty="id">
+        insert into test(name, age) select #{test.name}, #{test.age}  where not exists (
+            select 1 from test where name = #{test.name}
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,17 @@
+server:
+  port: 8081
+
+security:
+  oauth2:
+    resource:
+#      prefer-token-info: true
+#      token-info-uri: http://localhost:8080/oauth/check_token
+#      user-info-uri: http://localhost:8080/oauth/userinfo
+      jwt:
+        key-uri:  http://localhost:8080/oauth/token_key
+#        key-value: classpath:pubkey.txt
+#      jwk:
+#        key-set-uri: http://localhost:8080/.well-known/jwks.json
+    client:
+      client-id: client
+      client-secret: client

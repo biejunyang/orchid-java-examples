@@ -1,0 +1,18 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: 31a765a59efbf004b7c4
+            client-secret: ac0354690bd4ea3d04605434181e773df2bb58d3
+#          facebook:
+#            client-id: your-app-client-id
+#            client-secret: your-app-client-secret
+
+#        provider:
+#          github:
+#            authorization-uri: https://github.com/login/oauth/authorize
+#            token-uri: https://github.com/login/oauth/access_token
+#            user-info-uri: https://api.github.com/user
+#            jwk-set-uri: https://your-subdomain.oktapreview.com/oauth2/v1/keys

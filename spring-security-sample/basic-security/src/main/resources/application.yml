@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: basic
+  security:
+    user:
+      name: admin
+      password: admin
+logging:
+  level:
+    org.springframework: debug
