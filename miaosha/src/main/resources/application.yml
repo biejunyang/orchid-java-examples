@@ -1,0 +1,14 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:mysql://10.225.12.98:3306/test?Unicode=true&characterEncoding=UTF-8
+    username: root
+    password: root
+#  redis:
+#    host: 127.0.0.1
+#    database: 0
+#    password:
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.orchid.miaosha.entity
