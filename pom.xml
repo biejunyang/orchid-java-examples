@@ -18,7 +18,7 @@
     <modules>
         <module>repeated-insert</module>
         <module>spring-boot-examples</module>
-        <module>spring-boot-rabbitmq-provider</module>
+        <module>spring-security-examples</module>
     </modules>
     <dependencies>
         <dependency>
