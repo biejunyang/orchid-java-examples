@@ -38,7 +38,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      * 3、登录成功处理
      *    AuthenticationSuccessHandler
      *     defaultSuccessUrl():默认登录成功后将重定向到之前访问的页面、否则将重定向到此设置的页面
-     *
+     *     successForwardUrl()：请求转发到指定请求
      * 4、登录失败处理
      * 3、其他功能如：注销、记住
      * @param http
@@ -53,25 +53,24 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().permitAll()
                     .loginPage("/login").loginProcessingUrl("/login")
                     .usernameParameter("username").passwordParameter("password")
-//                    .failureForwardUrl("/login?error")
                     .defaultSuccessUrl("/welcome.html")
-                    .successForwardUrl("/welcome")
+//                    .successForwardUrl("/welcome.html")
 //                    .successHandler(new AuthenticationSuccessHandler() {
 //                        @Override
 //                        public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
-//                            httpServletResponse.sendRedirect("/welcome.html");
+//
 //                        }
 //                    })
-                    .failureUrl("/login?myerror")
+                    .failureUrl("/login?error1")
+//                    .failureForwardUrl("/login?error2")
 //                    .failureHandler(new AuthenticationFailureHandler() {
 //                        @Override
 //                        public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-//                            httpServletResponse.sendRedirect("/login?myerroxxxr");
+//
 //                        }
 //                    })
                     .and()
-                .logout()
-                .and()
+                .logout().and()
                 .csrf().disable()
         ;
     }
