@@ -1,33 +1,39 @@
 package com.orchid.examples.security.config;
 
+import com.orchid.examples.security.auth.MyAuthenticationFailureHandler;
+import com.orchid.examples.security.auth.MyAuthenticationProvide;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    @Autowired
+    private MyAuthenticationProvide myAuthenticationProvide;
+
+    @Autowired
+    private MyAuthenticationFailureHandler myAuthenticationFailureHandler;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-                .withUser("admin").password("{noop}123456").roles("ADMIN", "USER")
-                .and().withUser("user").password("123456").roles("USER");
+        //自定义认证处理
+        auth.authenticationProvider(myAuthenticationProvide);
+
+//        auth.inMemoryAuthentication()
+//                .withUser("admin").password("{noop}123456").roles("ADMIN", "USER")
+//                .and().withUser("user").password("123456").roles("USER");
     }
+
+
 
     /**
      * 1、需要认证的请求设置
@@ -47,13 +53,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .authorizeRequests()
-                    .anyRequest().authenticated()
-                    .and()
-                .formLogin().permitAll()
-                    .loginPage("/login").loginProcessingUrl("/login")
-                    .usernameParameter("username").passwordParameter("password")
-                    .defaultSuccessUrl("/welcome.html")
+            .authorizeRequests()
+                .anyRequest().authenticated()
+                .antMatchers("/loginPage").permitAll()
+                .and()
+            .formLogin().permitAll()
+                .loginPage("/login").loginProcessingUrl("/login")
+                .usernameParameter("username").passwordParameter("password")
+                .defaultSuccessUrl("/welcome.html")
 //                    .successForwardUrl("/welcome.html")
 //                    .successHandler(new AuthenticationSuccessHandler() {
 //                        @Override
@@ -61,17 +68,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //
 //                        }
 //                    })
-                    .failureUrl("/login?error1")
+                .failureUrl("/login?error")
 //                    .failureForwardUrl("/login?error2")
-//                    .failureHandler(new AuthenticationFailureHandler() {
-//                        @Override
-//                        public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-//
-//                        }
-//                    })
-                    .and()
-                .logout().and()
-                .csrf().disable()
+//                    .failureHandler(myAuthenticationFailureHandler)
+                .and()
+            .logout().and()
+            .csrf().disable()
         ;
     }
 
@@ -79,4 +81,5 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public PasswordEncoder passwordEncoder(){
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
+
 }
