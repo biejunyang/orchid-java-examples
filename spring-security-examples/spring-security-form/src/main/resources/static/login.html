@@ -3,14 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>login</title>
-    <script type="text/javascript" src=""></script>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 </head>
 <body>
     <h1>login</h1>
     <form action="/login" method="post">
     username:<input type="text" name="username"><br>
-    password:<input type="password" name="password">
-        <input type="submit" value="submit">
+    password:<input type="password" name="password"><br>
+    validateCode:<input type="text" name="code"><br>
+        <input type="submit" value="form submit">
+        <button type="button" id="ajax_submit">ajax submit</button>
     </form>
+
+    <script type="text/javascript">
+        $(function(){
+            $("#ajax_submit").click(function (e) {
+                $.post("/login", {
+                    username: $("[name=username]").val(),
+                    password: $("[name=password]").val()
+                },function (res) {
+                    console.info(res)
+                    if(res.code == 100 ){
+                        alert("登录成功,即将跳转")
+                        window.location.href="/welcome.html"
+                    }else{
+                        alert(res.msg);
+                    }
+                })
+            })
+        })
+    </script>
 </body>
 </html>

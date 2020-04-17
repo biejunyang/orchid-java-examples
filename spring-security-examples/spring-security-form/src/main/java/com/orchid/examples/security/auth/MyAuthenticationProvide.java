@@ -6,23 +6,25 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import javax.naming.NameNotFoundException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class MyAuthenticationProvide implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        UsernamePasswordAuthenticationToken authenticationToken=(UsernamePasswordAuthenticationToken)authentication;
-        Object username=authenticationToken.getPrincipal();
+        Object username=authentication.getPrincipal();
         if(ObjectUtil.isEmpty(username)){
             throw new BadCredentialsException("用户名不能为空!");
         }
-
-        Object password=authenticationToken.getCredentials();
+        Object password=authentication.getCredentials();
         if(ObjectUtil.isEmpty(password)){
             throw new BadCredentialsException("密码不能为空!");
         }
@@ -33,11 +35,28 @@ public class MyAuthenticationProvide implements AuthenticationProvider {
         if(!password.equals("123456")){
             throw new BadCredentialsException("密码错误!");
         }
-        return new UsernamePasswordAuthenticationToken(username,password,new ArrayList<>());
+
+        MyWebAuthenticationDetails details=(MyWebAuthenticationDetails)authentication.getDetails();
+        if(ObjectUtil.isEmpty(details.getCode())){
+            throw new BadCredentialsException("验证码不能为空!");
+        }
+        if(!details.getCode().equals("123")){
+            throw new BadCredentialsException("验证码错误!");
+        }
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+        /**
+         * 认证完成后，设置一些详情信息
+         */
+        authenticatedToken.setDetails(authentication.getDetails());
+        return authenticatedToken;
     }
+
 
     @Override
     public boolean supports(Class<?> aClass) {
-        return true;
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(aClass);
     }
 }

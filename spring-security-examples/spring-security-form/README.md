@@ -39,9 +39,10 @@
 3、基本表单认证设置
     http
         .authorizeRequests()
+            .antMatchers("/login").permitAll()
             .anyRequest().authenticated()
             .and()
-        .formLogin().permitAll()
+        .formLogin()
             .loginPage("/login").loginProcessingUrl("/login")
             .usernameParameter("username").passwordParameter("password")
             .defaultSuccessUrl("/welcome.html")
@@ -54,18 +55,20 @@
     //                    })
             .failureUrl("/login?error1")
     //                    .failureForwardUrl("/login?error2")
-    //                    .failureHandler(new AuthenticationFailureHandler() {
+    //                    .failureHandler(new myAuthenticationFailureHandler() {
     //                        @Override
     //                        public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
     //
     //                        }
     //                    })
+                .permitAll()
             .and()
         .logout().and()
         .csrf().disable()
     ;
     
     a、设置认证方式为表单认证，并允许访问登录相关端点服务
+        注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
         
     b、登录相关端点设置
         http.loginPage("/login")//登录页面设置
@@ -73,21 +76,158 @@
             .usernameParameter("username").passwordParameter("password")//表单参数设置
         
     c、登录成功处理
+        认证成功后，结果由AuthenticationSuccessHandler处理，如：
          http.defaultSuccessUrl("/welcome.html")//登录成功后中定向到该请求
              .successForwardUrl("/welcome.html")//登录成功请求转发到给请求
              .successHandler(new AuthenticationSuccessHandler());//使用自定义认证成功处理器执行处理
              
-        注意3中方式任选其一，后者覆盖前者、只有一个有效。
+        注意3中方式任选其一，后者覆盖前者、只有一个有效。Spring Security内置的认证成功处理器：
+        
+         SimpleUrlAuthenticationSuccessHandler：简单请求重定向处理
+         SavedRequestAwareAuthenticationSuccessHandler：跳转到认证之前的那个请求地址
         
     d、登录失败处理
+        认证失败后，结果由交给AuthenticationFailureHandler处理，如：
+        
         http.failureUrl("/login?error1")//登录失败后中定向到该请求
             .failureForwardUrl("/login?error2")//登录失败请求转发到给请求
             .failureHandler(new AuthenticationFailureHandler());//使用自定义认证成功处理器执行处理
-            
-        注意3中方式任选其一，后者覆盖前者、只有一个有效。
+        
+        3中方式任选其一，后者覆盖前者、只有一个有效。
+        在Spring Security内置了几种验证失败处理器：
+            DelegatingAuthenticationFailureHandler将AuthenticationException子类委托给不同的AuthenticationFailureHandler，这意味着我们可以为AuthenticationException的不同实例创建不同的行为
+            ExceptionMappingAuthenticationFailureHandler根据AuthenticationException的完整类名将用户重定向到特定的URL,内置的异常类包括BadCredentialsException、CaptchaException、AccountExpiredException、LockedException等
+            SimpleUrlAuthenticationFailureHandler是默认使用的组件，如果指定，它会将用户重定向到failureUrl;否则，它只会返回401响应
+                    
     e、其他功能如：登录注销设置、禁用csfr
     
+4、获取已认证用户信息
+
+   @GetMapping("/userInfo")
+   @ResponseBody
+   public Object userInfo(){
+       Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
+       return authentication.getPrincipal();
+   }
+   
+    SecurityContextHolder可以获取到当前请求的安全上线文信息，并从中获取到已认证的认证用户信息。其他获取的Authentication则AuthenticationProvider认证成功之后返回对象。保存在安全上线文中。
+    SecurityContext会通过session来维持状态，所以登录后每次请求都可以从session中获取当前用户Authentication，这是系统内部实现的
+
+
+4、自定义AuthenticationProvider实现自定义认证
+    根据spring security默认认证流程来看、UsernamePasswordAuthenticationFilter默认是处理登录请求的过滤器、AuthenticationProvider为实际的认证提供者。
+    我们可以自定通过自定这两个组件来实现自定义认证。
     
-4、自定义认证
+    自定义认证提供者：
+        
+        @Component
+        public class MyAuthenticationProvide implements AuthenticationProvider {
+        
+            @Override
+            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+                Object username=authentication.getPrincipal();
+                if(ObjectUtil.isEmpty(username)){
+                    throw new BadCredentialsException("用户名不能为空!");
+                }
+                Object password=authentication.getCredentials();
+                if(ObjectUtil.isEmpty(password)){
+                    throw new BadCredentialsException("密码不能为空!");
+                }
+        
+                if(!username.equals("admin")){
+                    throw new BadCredentialsException("用户名不存在!");
+                }
+                if(!password.equals("123456")){
+                    throw new BadCredentialsException("密码错误!");
+                }
+                List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        
+                UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+                /**
+                 * 认证完成后，设置一些详情信息
+                 */
+                authenticatedToken.setDetails(authentication.getDetails());
+                return authenticatedToken;
+            }
+        
+            
+            @Override
+            public boolean supports(Class<?> aClass) {
+                return UsernamePasswordAuthenticationToken.class.isAssignableFrom(aClass);
+            }
+        }
+      
+    2、使用自定义定义的认证提供者组件
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            //自定义认证处理
+            auth.authenticationProvider(myAuthenticationProvide);
+        }
+        
+     
+    3、Details自定义参数设置
+        认证的入参是一个未认证Authentication，出参是一个已认证Authentication，formLogin的默认Authentication实现是UsernamePasswordAuthenticationToken。
+    该认证参数默认可以用来接收输入的用户名和密码参数、若是还有其他的认证参数，则可以使用自定义Details。
+    Authentication认证信息中还定义了一个Details字段，可以用来接收自定义的认证参数，默认Details实现为WebAuthenticationDetails类型，该类中包括用户ip和sessionId两个参数。
+    
+        自定义Details实现,定义需要的认证参数，并从HttpServletRequest中使用参数：
+                public class MyWebAuthenticationDetails extends WebAuthenticationDetails {
+                
+                    private String code;
+                
+                    public MyWebAuthenticationDetails(HttpServletRequest request) {
+                        super(request);
+                        this.code=request.getParameter("code");
+                    }
+                }
+                
+        设置Authentication认证信息中Detail的实际类型：
+        
+            http.formLogin()
+                .authenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
+                    @Override
+                    public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
+                        return new MyWebAuthenticationDetails(context);
+                    }
+                })
+    
+        
+        AuthenticationProvider组件中使用Detail参数，如：
+        
+        
+                @Override
+                public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+                    Object username=authentication.getPrincipal();
+                    if(ObjectUtil.isEmpty(username)){
+                        throw new BadCredentialsException("用户名不能为空!");
+                    }
+                    MyWebAuthenticationDetails details=(MyWebAuthenticationDetails)authentication.getDetails();
+                    if(!details.getCode().equals("123")){
+                        throw new BadCredentialsException("验证码错误!");
+                    }
+                    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+                    authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            
+                    UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+                    /**
+                     * 认证完成后，设置一些详情信息
+                     */
+                    authenticatedToken.setDetails(authentication.getDetails());
+                    return authenticatedToken;
+                }
+                
+
+5、自定义认证过滤器处理登录认证
+    Spring Security实现登录认证，最根本是通过核心过滤器链中的认证过滤器来实现的，UsernamePasswordAuthenticationFilter就是默认是处理登录请求的过滤器。
+    我们可以添加自定义认证过滤器来处理认证逻辑，从根本上实现自定义认证。
+    
+    1、实现自定义过滤器，
+    
+    2、将自定义的过滤器添加到spring security的过滤器链中
+    
+    3、
+    AbstractAuthenticationProcessingFilter
+    根据spring security默认认证流程来看、、AuthenticationProvider为实际的认证提供者。
+    我们可以自定通过自定这两个组件来实现自定义认证。
 
 
