@@ -40,7 +40,7 @@ Spring Security提供的默认实现为ProviderManager。默认他本身也并�
 认证逻辑的实际的执行者，Spring Security默认实现为DaoAuthenticationProvider。他通过UserDetailService对象获取实际用户信息，然后在认证信息就行比对校验。
    
  
-## 2、Spring Security 表单认证基本配置
+## 3、Spring Security 表单认证基本配置
 
 ### 代码
 ```java
@@ -121,14 +121,17 @@ public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
  
 ### 说明
 a、设置认证方式为表单认证，并允许访问登录相关端点服务
-    注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
+   ```注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前```
     
 b、登录相关端点设置
+```java    
     http.loginPage("/login")//登录页面设置
         .loginProcessingUrl("/login")//登录请求设置,认证过滤器将拦击处理该请求进行认证
         .usernameParameter("username").passwordParameter("password")//表单参数设置
-    
+```
+
 c、登录成功处理
+  
     认证成功后，结果由AuthenticationSuccessHandler处理，如：
      http.defaultSuccessUrl("/welcome.html")//登录成功后中定向到该请求
          .successForwardUrl("/welcome.html")//登录成功请求转发到给请求
@@ -140,8 +143,8 @@ c、登录成功处理
      SavedRequestAwareAuthenticationSuccessHandler：跳转到认证之前的那个请求地址
     
 d、登录失败处理
+```
     认证失败后，结果由交给AuthenticationFailureHandler处理，如：
-    
     http.failureUrl("/login?error1")//登录失败后中定向到该请求
         .failureForwardUrl("/login?error2")//登录失败请求转发到给请求
         .failureHandler(new AuthenticationFailureHandler());//使用自定义认证成功处理器执行处理
@@ -151,73 +154,100 @@ d、登录失败处理
         DelegatingAuthenticationFailureHandler将AuthenticationException子类委托给不同的AuthenticationFailureHandler，这意味着我们可以为AuthenticationException的不同实例创建不同的行为
         ExceptionMappingAuthenticationFailureHandler根据AuthenticationException的完整类名将用户重定向到特定的URL,内置的异常类包括BadCredentialsException、CaptchaException、AccountExpiredException、LockedException等
         SimpleUrlAuthenticationFailureHandler是默认使用的组件，如果指定，它会将用户重定向到failureUrl;否则，它只会返回401响应
-                
+```            
 e、其他功能如：登录注销设置、禁用csfr
     
-4、获取已认证用户信息
+## 4、获取已认证用户信息
+```java  
+@GetMapping("/userInfo")
+@ResponseBody
+public Object userInfo(){
+   Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
+   return authentication.getPrincipal();
+}
 
-   @GetMapping("/userInfo")
-   @ResponseBody
-   public Object userInfo(){
-       Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
-       return authentication.getPrincipal();
-   }
-   
+/**
+ * 获取登录后的Principal（需要登录）
+ */
+@GetMapping("/getPrincipal")
+@ResponseBody
+public Object getPrincipal(@AuthenticationPrincipal Principal principal){
+    return principal;
+}
+
+/**
+ * 获取登录后的UserDetails（需要登录）
+ */
+@GetMapping("/getUserDetails")
+@ResponseBody
+public Object getUserDetails(@AuthenticationPrincipal UserDetails userDetails) {
+    return userDetails;
+}
+```
     SecurityContextHolder可以获取到当前请求的安全上线文信息，并从中获取到已认证的认证用户信息。其他获取的Authentication则AuthenticationProvider认证成功之后返回对象。保存在安全上线文中。
     SecurityContext会通过session来维持状态，所以登录后每次请求都可以从session中获取当前用户Authentication，这是系统内部实现的
 
 
-4、自定义AuthenticationProvider实现自定义认证
-    根据spring security默认认证流程来看、UsernamePasswordAuthenticationFilter默认是处理登录请求的过滤器、AuthenticationProvider为实际的认证提供者。
-    我们可以自定通过自定这两个组件来实现自定义认证。
+## 5、自定义认证
+
+根据认证流程来看、Spring Security默认使用UsernamePasswordAuthenticationFilter过滤器来处理登录认证请求、间接调用DaoAuthenticationProvider认证提供者来实现认证逻辑。<br/>
+所以我们主要可以通过通过自定这两个组件来实现自定义认证。
     
-    自定义认证提供者：
-        
-        @Component
-        public class MyAuthenticationProvide implements AuthenticationProvider {
-        
-            @Override
-            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                Object username=authentication.getPrincipal();
-                if(ObjectUtil.isEmpty(username)){
-                    throw new BadCredentialsException("用户名不能为空!");
-                }
-                Object password=authentication.getCredentials();
-                if(ObjectUtil.isEmpty(password)){
-                    throw new BadCredentialsException("密码不能为空!");
-                }
-        
-                if(!username.equals("admin")){
-                    throw new BadCredentialsException("用户名不存在!");
-                }
-                if(!password.equals("123456")){
-                    throw new BadCredentialsException("密码错误!");
-                }
-                List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        
-                UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
-                /**
-                 * 认证完成后，设置一些详情信息
-                 */
-                authenticatedToken.setDetails(authentication.getDetails());
-                return authenticatedToken;
-            }
-        
-            
-            @Override
-            public boolean supports(Class<?> aClass) {
-                return UsernamePasswordAuthenticationToken.class.isAssignableFrom(aClass);
-            }
+### 自定义AuthenticationProvider认证提供者
+1、创建认证提供者
+```java
+@Component
+public class MyAuthenticationProvide implements AuthenticationProvider {
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        Object username=authentication.getPrincipal();
+        if(ObjectUtil.isEmpty(username)){
+            throw new BadCredentialsException("用户名不能为空!");
         }
-      
-    2、使用自定义定义的认证提供者组件
-        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-            //自定义认证处理
-            auth.authenticationProvider(myAuthenticationProvide);
+        Object password=authentication.getCredentials();
+        if(ObjectUtil.isEmpty(password)){
+            throw new BadCredentialsException("密码不能为空!");
         }
-        
-     
+
+        if(!username.equals("admin")){
+            throw new BadCredentialsException("用户名不存在!");
+        }
+        if(!password.equals("123456")){
+            throw new BadCredentialsException("密码错误!");
+        }
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+        /**
+         * 认证完成后，设置一些详情信息
+         */
+        authenticatedToken.setDetails(authentication.getDetails());
+        return authenticatedToken;
+    }
+
+    /**
+     * 认证提供者支持的Authentication对象
+    **/
+    @Override
+    public boolean supports(Class<?> aClass) {
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(aClass);
+    }
+}
+```
+   
+2、使用自定义的认证提供者组件
+
+```java
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    //自定义认证处理
+    auth.authenticationProvider(myAuthenticationProvide);
+}
+```
+
+### 自定义认证过滤器
+    
     3、Details自定义参数设置
         认证的入参是一个未认证Authentication，出参是一个已认证Authentication，formLogin的默认Authentication实现是UsernamePasswordAuthenticationToken。
     该认证参数默认可以用来接收输入的用户名和密码参数、若是还有其他的认证参数，则可以使用自定义Details。
