@@ -119,7 +119,7 @@ public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
 
 ```
  
- ### 说明
+### 说明
 a、设置认证方式为表单认证，并允许访问登录相关端点服务
     注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
     
