@@ -190,8 +190,7 @@ public Object getUserDetails(@AuthenticationPrincipal UserDetails userDetails) {
 
 ## 5、自定义认证
 
-根据认证流程来看、Spring Security默认使用UsernamePasswordAuthenticationFilter过滤器来处理登录认证请求、间接调用DaoAuthenticationProvider认证提供者来实现认证逻辑。<br/>
-所以我们主要可以通过通过自定这两个组件来实现自定义认证。
+根据认证流程来看、Spring Security默认使用UsernamePasswordAuthenticationFilter过滤器来处理登录认证请求、间接调用DaoAuthenticationProvider认证提供者来实现认证逻辑，所以我们主要可以通过通过自定这两个组件来实现自定义认证。
     
 ### 自定义AuthenticationProvider认证提供者
 1、创建认证提供者
@@ -247,82 +246,233 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 ```
 
 ### 自定义认证过滤器
+1、定义认证过滤器
+
+```认证过滤器的抽象父类为AbstractAuthenticationProcessingFilter。实现中我们也可以直接继承内置的UsernamePasswordAuthenticationFilter过滤器，使用其默认的功能，并对其进行扩展。```
+
+```java
+public class MyAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
+
+    /**
+     * 定义过滤器处理登录请求url
+     */
+    public MyAuthenticationProcessingFilter() {
+        super(new AntPathRequestMatcher("/login", "POST"));
+    }
+
+
+    /**
+     * 认证处理
+     * @param request
+     * @param response
+     * @return
+     * @throws AuthenticationException
+     * @throws IOException
+     * @throws ServletException
+     */
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
+
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+        String code =request.getParameter("code");
+        if (username == null) {
+            username = "";
+        }
+        if (password == null) {
+            password = "";
+        }
+        if (code == null) {
+            code = "";
+        }
+        username = username.trim();
+        MyAuthenticationToken authRequest = new MyAuthenticationToken(username, password, code);
+        authRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
+        return this.getAuthenticationManager().authenticate(authRequest);
+    }
+}
+```
+    注意：Sring Security设计中，认证过滤器执行封装了Authentication认证对象，然后调用认证管理器进行认证。自定义认证时可以延用此种设计，也可以直接在认证过滤器中完成认证逻辑。  ````    
+
+2、将自定义的认证过滤器添加到过滤器链中
+```java
+@Override
+protected void configure(HttpSecurity http) throws Exception {
     
-    3、Details自定义参数设置
-        认证的入参是一个未认证Authentication，出参是一个已认证Authentication，formLogin的默认Authentication实现是UsernamePasswordAuthenticationToken。
-    该认证参数默认可以用来接收输入的用户名和密码参数、若是还有其他的认证参数，则可以使用自定义Details。
-    Authentication认证信息中还定义了一个Details字段，可以用来接收自定义的认证参数，默认Details实现为WebAuthenticationDetails类型，该类中包括用户ip和sessionId两个参数。
+    //自定义的认证过滤器
+    MyAuthenticationProcessingFilter myAuthenticationProcessingFilter=new MyAuthenticationProcessingFilter();
+    myAuthenticationProcessingFilter.setAuthenticationManager(this.authenticationManagerBean());
+    myAuthenticationProcessingFilter.setAuthenticationSuccessHandler(myAuthenticationSuccesHandler);
+    myAuthenticationProcessingFilter.setAuthenticationFailureHandler(myAuthenticationFailureHandler);
+    myAuthenticationProcessingFilter.setAuthenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
+        @Override
+        public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
+            return new MyWebAuthenticationDetails(context);
+        }
+    });
     
-        自定义Details实现,定义需要的认证参数，并从HttpServletRequest中使用参数：
-                public class MyWebAuthenticationDetails extends WebAuthenticationDetails {
-                
-                    private String code;
-                
-                    public MyWebAuthenticationDetails(HttpServletRequest request) {
-                        super(request);
-                        this.code=request.getParameter("code");
-                    }
-                }
-                
-        设置Authentication认证信息中Detail的实际类型：
-        
-            http.formLogin()
-                .authenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
-                    @Override
-                    public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
-                        return new MyWebAuthenticationDetails(context);
-                    }
-                })
+    http
+        .authorizeRequests()
+            .antMatchers("/login").permitAll()
+            .anyRequest().authenticated()
+            .and()
+        .formLogin()
+            .loginPage("/login")
+            .and()
+        .logout().and()
+        .csrf().disable()
+        .addFilterBefore(myAuthenticationProcessingFilter, UsernamePasswordAuthenticationFilter.class);
+    ;
+}
+```
+    注意：
+    a、使用http.addFilterBefore()、http.addFilterAfter()、http.addFilterAt()可以将自定义过滤器添加到过滤器链中的某个过滤器之前或者之后。
+    b、即使我们自定义的认证过滤器不调用认证管理器执行认证，而且直接在认证过滤器中实现，也需要给我们的认证过滤器设置指定认证管理器对象
+    c、给认证过滤器设置认证成功/失败处理器，否则使用默认的。并且http.formLogin().loginPage("/login").successHandler().failureHandler()中定义的设置是给UsernamePasswordAuthenticationFilter的，自定义的认真过滤器并不沿用。
     
-        
-        AuthenticationProvider组件中使用Detail参数，如：
-        
-        
-                @Override
-                public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                    Object username=authentication.getPrincipal();
-                    if(ObjectUtil.isEmpty(username)){
-                        throw new BadCredentialsException("用户名不能为空!");
-                    }
-                    MyWebAuthenticationDetails details=(MyWebAuthenticationDetails)authentication.getDetails();
-                    if(!details.getCode().equals("123")){
-                        throw new BadCredentialsException("验证码错误!");
-                    }
-                    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-                    authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+### 自定义Authentication认证对象
+认证过滤器拦截到认证请求后解析请求，并包装成一个认证Authentication对象，交给认证管理器处理。认证管理器则调用认证提供者来处理认证，调用认证提供者时会判断认证提供者是否支持认证该Authentication对象，如：
+````  /**
+          * 认证提供者支持的Authentication对象
+         **/
+         @Override
+         public boolean supports(Class<?> aClass) {
+             return UsernamePasswordAuthenticationToken.class.isAssignableFrom(aClass);
+         }
+````
+
+1、定义认证对象，实现Authentication接口，一般可以对内置的Authentication实现进行扩展，如：
+```java
+@Data
+public class MyAuthenticationToken extends UsernamePasswordAuthenticationToken {
+
+    private String code;
+
+    public MyAuthenticationToken(Object principal, Object credentials, String code) {
+        super(principal, credentials);
+        this.code=code;
+    }
+    
+    public MyAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
+        super(principal, credentials, authorities);
+    }
+    
+}
+```
+
+2、在认证过滤器中使用
+```java
+@Override
+public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
+    String code =request.getParameter("code");
+    if (username == null) {
+        username = "";
+    }
+    if (password == null) {
+        password = "";
+    }
+    if (code == null) {
+        code = "";
+    }
+    username = username.trim();
+    MyAuthenticationToken authRequest = new MyAuthenticationToken(username, password, code);
+    authRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
+    return this.getAuthenticationManager().authenticate(authRequest);
+}
+```
+### 自定义Details参数设置
+认证的入参是一个未认证Authentication，出参是一个已认证Authentication，formLogin的默认Authentication实现是UsernamePasswordAuthenticationToken。该认证参数默认可以用来接收输入的用户名和密码参数、若是还有其他的认证参数，则可以使用自定义Details<br/>。
+Authentication认证信息中还定义了一个Details字段，可以用来接收自定义的认证参数，默认Details实现为WebAuthenticationDetails类型，该类中包括用户ip和sessionId两个参数。
+    
+1、自定义Details实现,定义需要的认证参数，并从HttpServletRequest中解析参数：
+``` java
+public class MyWebAuthenticationDetails extends WebAuthenticationDetails {
+
+    private String code;
+
+    public MyWebAuthenticationDetails(HttpServletRequest request) {
+        super(request);
+        this.code=request.getParameter("code");
+    }
+}
+```         
+       
+2、设置Authentication认证信息中Detail的实际类型：
+
+```java
+http.formLogin()
+    .authenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
+        @Override
+        public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
+            return new MyWebAuthenticationDetails(context);
+        }
+    })
+```
+    
+       
+3、AuthenticationProvider组件中使用Detail参数，如：
+
+```java
+@Override
+public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    Object username=authentication.getPrincipal();
+    if(ObjectUtil.isEmpty(username)){
+        throw new BadCredentialsException("用户名不能为空!");
+    }
+    MyWebAuthenticationDetails details=(MyWebAuthenticationDetails)authentication.getDetails();
+    if(!details.getCode().equals("123")){
+        throw new BadCredentialsException("验证码错误!");
+    }
+    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+    authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+    UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+    /**
+     * 认证完成后，设置一些详情信息
+     */
+    authenticatedToken.setDetails(authentication.getDetails());
+    return authenticatedToken;
+}
+                
+```
+
+## 4、多重认证
+````有两种方式实现多重认证：
+    a、过滤器链中添加多个认证过滤器：添加多个认证过滤器认证时要确定好过滤器的顺序，并且开启多级认证：
+         codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
+        上一个过滤器认证完成后，继续向下认证。并且注意要保证所有的过滤器都认证成功才执行认证成功处理
             
-                    UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
-                    /**
-                     * 认证完成后，设置一些详情信息
-                     */
-                    authenticatedToken.setDetails(authentication.getDetails());
-                    return authenticatedToken;
-                }
+    b、在AuthenticationManager中添加多个认证提供者，如：
+        auth.authenticationProvider(myAuthenticationProvide).authenticationProvider(myAuthenticationProvide2);
+````
+
+## 5、Session管理
+
+默认用户的认证信息保存在Session对象中，通过检查当前请求的会话对象中的认证信息是否通过认证，来判断用户是否登录。我们可以通过配置来管理Session对象。
+    
+1、Session超时配置：
+```yaml
+server:
+  servlet:
+    session:
+      timeout: 30m #超时配置、默认30分钟
+```
+```java
+http
+    .sessionManagement()
+        .invalidSessionUrl("/login")//session超时跳转页面
+        .invalidSessionStrategy(new InvalidSessionStrategy() {
+            @Override
+            public void onInvalidSessionDetected(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
                 
-
-5、自定义认证过滤器处理登录认证
-    Spring Security实现登录认证，最根本是通过核心过滤器链中的认证过滤器来实现的，UsernamePasswordAuthenticationFilter就是默认是处理登录请求的过滤器。
-    我们可以添加自定义认证过滤器来处理认证逻辑，从根本上实现自定义认证。
-    
-    1、实现自定义过滤器，
-    
-    2、将自定义的过滤器添加到spring security的过滤器链中
+            }
+        })//session超时后处理
+;
+```
         
-        注意：自定义添加的过滤器需要根据需要设置认证成功处理器，和认证失败处理器，不能使用failHandler()和successHandler（）设置的。
-        并且若是有多个认证过滤器Filter认证时，需要在最后一个认证过滤器认证成功后返回结果，且最终保存在SecurityContext中的Authentication
-        对象是第一个个认证过滤器认证成功后返回的Authentication对象。
-        
-        codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
-
-        多重认证可以多个定义多个AuthenticationProvider，也可以在过滤器链中添加多个认证过滤器AbstractAuthenticationProcessingFilter联合认证。
-        
-6、Session管理
-    默认用户的认证信息保存在Session对象中，通过检查当前请求的会话对象中的认证信息是否通过认证，来判断用户是否登录。我们可以通过配置来管理Session对象。
-    
-    超时配置：
-        时间、超时处理请求
-        
-    session并发策略，控制同一个用户创建的Session数量
+2、session并发策略，控制同一个用户创建的Session数量
         http.sessionManagement()
             .maximumSessions(1) //同一个用户的最大并发数
             .maxSessionsPreventsLogin(false)//false之后登录踢掉之前登录,true则不允许之后登录
@@ -335,10 +485,13 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
                 }
             })
     
-    分布式Session管理，
-        分布式集群环境下，可以使用Redis统一对Session对象管理
-            
-            <dependency>
+3、分布式Session管理，
+
+分布式集群环境下，可以使用Redis统一对Session对象管理
+
+1、pom.xml依赖
+```xml
+        <dependency>
                 <groupId>org.springframework.session</groupId>
                 <artifactId>spring-session-data-redis</artifactId>
             </dependency>
@@ -351,17 +504,21 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
             </dependency>
-    
-    
-    开始Redis Session管理配置
-        spring:
-          redis:
-            host: localhost
-            port: 6379
-          session:
-            store-type: redis
-            
+```
+
+2、开始Redis Session管理配置
+```yaml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+  session:
+    store-type: redis
+```          
         
+  
+  
+  
     
 SecurityContext：安全上下文信息，用来存储用的认证信息
 	实现：
