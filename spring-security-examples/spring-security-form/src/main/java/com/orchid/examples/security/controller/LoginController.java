@@ -36,6 +36,7 @@ public class LoginController {
      * 获取登录后的Principal（需要登录）
      */
     @GetMapping("/getPrincipal")
+    @ResponseBody
     public Object getPrincipal(@AuthenticationPrincipal Principal principal){
         return principal;
     }
@@ -44,6 +45,7 @@ public class LoginController {
      * 获取登录后的UserDetails（需要登录）
      */
     @GetMapping("/getUserDetails")
+    @ResponseBody
     public Object getUserDetails(@AuthenticationPrincipal UserDetails userDetails) {
         return userDetails;
     }

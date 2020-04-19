@@ -224,10 +224,67 @@
     1、实现自定义过滤器，
     
     2、将自定义的过滤器添加到spring security的过滤器链中
+        
+        注意：自定义添加的过滤器需要根据需要设置认证成功处理器，和认证失败处理器，不能使用failHandler()和successHandler（）设置的。
+        并且若是有多个认证过滤器Filter认证时，需要在最后一个认证过滤器认证成功后返回结果，且最终保存在SecurityContext中的Authentication
+        对象是第一个个认证过滤器认证成功后返回的Authentication对象。
+        
+        codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
+
+        多重认证可以多个定义多个AuthenticationProvider，也可以在过滤器链中添加多个认证过滤器AbstractAuthenticationProcessingFilter联合认证。
+        
+6、Session管理
+    默认用户的认证信息保存在Session对象中，通过检查当前请求的会话对象中的认证信息是否通过认证，来判断用户是否登录。我们可以通过配置来管理Session对象。
     
-    3、
-    AbstractAuthenticationProcessingFilter
-    根据spring security默认认证流程来看、、AuthenticationProvider为实际的认证提供者。
-    我们可以自定通过自定这两个组件来实现自定义认证。
+    超时配置：
+        时间、超时处理请求
+        
+    session并发策略，控制同一个用户创建的Session数量
+        http.sessionManagement()
+            .maximumSessions(1) //同一个用户的最大并发数
+            .maxSessionsPreventsLogin(false)//false之后登录踢掉之前登录,true则不允许之后登录
+            .expiredSessionStrategy(new SessionInformationExpiredStrategy() {
+            
+                //登录被踢掉时的自定义操作
+                @Override
+                public void onExpiredSessionDetected(SessionInformationExpiredEvent sessionInformationExpiredEvent) throws IOException, ServletException {
+
+                }
+            })
+    
+    分布式Session管理，
+        分布式集群环境下，可以使用Redis统一对Session对象管理
+            
+            <dependency>
+                <groupId>org.springframework.session</groupId>
+                <artifactId>spring-session-data-redis</artifactId>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+            </dependency>
+    
+    
+    开始Redis Session管理配置
+        spring:
+          redis:
+            host: localhost
+            port: 6379
+          session:
+            store-type: redis
+            
+        
+    
+SecurityContext：安全上下文信息，用来存储用的认证信息
+	实现：
+
+SecurityContextRepository：安全上下文存储仓库，用来存储用户的安全上下文对象SecurityContext
+	HttpSessionSecurityContextRespotiory:安全上下文对象存储到HttpSession对象中
+	
 
 

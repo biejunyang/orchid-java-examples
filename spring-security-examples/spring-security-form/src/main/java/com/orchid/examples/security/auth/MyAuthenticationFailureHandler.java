@@ -39,7 +39,6 @@ public class MyAuthenticationFailureHandler extends SimpleUrlAuthenticationFailu
             response.getWriter().flush();
             response.getWriter().close();
         } else {
-
             this.getRedirectStrategy().sendRedirect(request,response,"/login?msg="+msg);
         }
     }

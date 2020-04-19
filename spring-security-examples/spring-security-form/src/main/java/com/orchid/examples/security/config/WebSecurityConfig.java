@@ -10,13 +10,21 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpRequestResponseHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.session.SessionInformationExpiredEvent;
+import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -30,6 +38,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private MyAuthenticationSuccesHandler myAuthenticationSuccesHandler;
+
 
 
     /**
@@ -61,36 +70,60 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and()
             .formLogin()
-                .authenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
-                    @Override
-                    public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
-                        return new MyWebAuthenticationDetails(context);
-                    }
-                })
-                .loginPage("/login").loginProcessingUrl("/login")
-                .usernameParameter("username").passwordParameter("password")
-//                .defaultSuccessUrl("/welcome.html")
-//                    .successForwardUrl("/welcome.html")
-                .successHandler(myAuthenticationSuccesHandler)
-//                .failureUrl("/loginPage2?error")
-//                .failureForwardUrl("/login?error2")
-                .failureHandler(myAuthenticationFailureHandler)
+                .loginPage("/login")
+//                .loginProcessingUrl("/login")
+//                .usernameParameter("username").passwordParameter("password")
+////                .defaultSuccessUrl("/welcome.html")
+////                    .successForwardUrl("/welcome.html")
+//                .successHandler(myAuthenticationSuccesHandler)
+////                .failureUrl("/loginPage2?error")
+////                .failureForwardUrl("/login?error2")
+//                .failureHandler(myAuthenticationFailureHandler)
+//                .authenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
+//                    @Override
+//                    public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
+//                        return new MyWebAuthenticationDetails(context);
+//                    }
+//                })
                 .and()
             .logout().and()
             .csrf().disable()
+            .sessionManagement()
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+                .expiredSessionStrategy(new SessionInformationExpiredStrategy() {
+                    @Override
+                    public void onExpiredSessionDetected(SessionInformationExpiredEvent sessionInformationExpiredEvent) throws IOException, ServletException {
+
+                    }
+                })
         ;
-        CodeAuthenticationProcessingFilter codeFilter=new CodeAuthenticationProcessingFilter();
-        codeFilter.setAuthenticationManager(this.authenticationManagerBean());
 
-        //设置认证失败处理器
-        codeFilter.setAuthenticationFailureHandler(myAuthenticationFailureHandler);
-
-        //设置认证成功处理器
-        codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
+//        CodeAuthenticationProcessingFilter codeFilter=new CodeAuthenticationProcessingFilter();
+//        codeFilter.setAuthenticationManager(this.authenticationManagerBean());
+//
+//        //设置认证失败处理器
+//        codeFilter.setAuthenticationFailureHandler(myAuthenticationFailureHandler);
+//
+//        //设置认证成功处理器
+//        codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
 
 //        codeFilter.setContinueChainBeforeSuccessfulAuthentication(false);
 //        codeFilter.setAuthenticationSuccessHandler(myAuthenticationSuccesHandler);
-        http.addFilterAt(codeFilter, UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterAt(codeFilter, UsernamePasswordAuthenticationFilter.class);
+
+
+        MyAuthenticationProcessingFilter myAuthenticationProcessingFilter=new MyAuthenticationProcessingFilter();
+        myAuthenticationProcessingFilter.setAuthenticationManager(this.authenticationManagerBean());
+        myAuthenticationProcessingFilter.setAuthenticationSuccessHandler(myAuthenticationSuccesHandler);
+        myAuthenticationProcessingFilter.setAuthenticationFailureHandler(myAuthenticationFailureHandler);
+        myAuthenticationProcessingFilter.setAuthenticationDetailsSource(new AuthenticationDetailsSource<HttpServletRequest, MyWebAuthenticationDetails>() {
+            @Override
+            public MyWebAuthenticationDetails buildDetails(HttpServletRequest context) {
+                return new MyWebAuthenticationDetails(context);
+            }
+        });
+        http.addFilterBefore(myAuthenticationProcessingFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     @Override

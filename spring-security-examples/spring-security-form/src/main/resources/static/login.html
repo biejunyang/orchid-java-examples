@@ -20,7 +20,8 @@
             $("#ajax_submit").click(function (e) {
                 $.post("/login", {
                     username: $("[name=username]").val(),
-                    password: $("[name=password]").val()
+                    password: $("[name=password]").val(),
+                    code: $("[name=code]").val()
                 },function (res) {
                     console.info(res)
                     if(res.code == 100 ){
