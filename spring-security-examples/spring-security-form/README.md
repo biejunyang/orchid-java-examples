@@ -26,17 +26,17 @@
 Spring Security的核心过滤器、Spring Security安全认证的入口，拦截所有的请求根据需要进行安全保护和认证。具体的保护和认证操作委托给内置的一个过滤器链来实现。
 
 ### 2、AbstractAuthenticationProcessingFilter(认证过滤器)：
-认证过滤器的抽象接口，过滤器包含了一个认证过滤器来实现登录认证，Spring Security表单登录认证的认证过滤器实现为UsernamePasswordAuthenticationFilter，拦截登录认证请求默认为POST"/login"。
-实现该过滤器本身并不直接进行认证处理，而是将请求封装成UsernamePasswordAuthenticationToken对象、然后调用设置的AuthenticationManager对象就行认证处理。
-认证成功后AuthenticationManager返回一个已认证的AuthenticationManager对象，并保存到认证上下文中，然后然后调用AuthenticationSuccessHandler对象执行认证成功处理
+认证过滤器的抽象接口，过滤器包含了一个认证过滤器来实现登录认证，Spring Security表单登录认证的认证过滤器实现为UsernamePasswordAuthenticationFilter，拦截登录认证请求默认为POST"/login"。<br />
+实现该过滤器本身并不直接进行认证处理，而是将请求封装成UsernamePasswordAuthenticationToken对象、然后调用设置的AuthenticationManager对象就行认证处理。<br />
+认证成功后AuthenticationManager返回一个已认证的AuthenticationManager对象，并保存到认证上下文中，然后然后调用AuthenticationSuccessHandler对象执行认证成功处理。<br />
 认证失败则调用AuthenticationFailureHandler对象执行失败处理 
      
 ### 3、AuthenticationManager(认证管理器)：
-认证管理器的作用是接收认证过滤器传递的未认证的Authentication认证信息对象，认证成功则返回一个已认证的Authentication对象。
+认证管理器的作用是接收认证过滤器传递的未认证的Authentication认证信息对象，认证成功则返回一个已认证的Authentication对象。<br />
 Spring Security提供的默认实现为ProviderManager。默认他本身也并不直接认证，而是调用实际的认证提供者AuthenticationProvider处理认证
 并且认证管理器中可以设置多个AuthenticationProvider进行多重认证。
     
-###4、AuthenticationProvider(认证提供者)：
+### 4、AuthenticationProvider(认证提供者)：
 认证逻辑的实际的执行者，Spring Security默认实现为DaoAuthenticationProvider。他会调用UserDetailServer.loadUserByUsername(name)，获取用户信息，然后和认证信息就行校验
    
  
