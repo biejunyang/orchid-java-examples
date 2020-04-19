@@ -438,7 +438,7 @@ public Authentication authenticate(Authentication authentication) throws Authent
                 
 ```
 
-## 4、多重认证
+## 6、多重认证
 ````有两种方式实现多重认证：
     a、过滤器链中添加多个认证过滤器：添加多个认证过滤器认证时要确定好过滤器的顺序，并且开启多级认证：
          codeFilter.setContinueChainBeforeSuccessfulAuthentication(true);//验证后继续后认证
@@ -448,7 +448,7 @@ public Authentication authenticate(Authentication authentication) throws Authent
         auth.authenticationProvider(myAuthenticationProvide).authenticationProvider(myAuthenticationProvide2);
 ````
 
-## 5、Session管理
+## 7、Session管理
 
 默认用户的认证信息保存在Session对象中，通过检查当前请求的会话对象中的认证信息是否通过认证，来判断用户是否登录。我们可以通过配置来管理Session对象。
     
@@ -517,8 +517,42 @@ spring:
 ```          
         
   
-  
-  
+## 8、权限控制
+Spring Security提供了默认的权限控制功能，需要预先分配给用户特定的权限，并指定各项操作执行所要求的权限。用户请求执行某项操作时，Spring Security会先检查用户所拥有的权限是否符合执行该项操作所要求的权限，如果符合，才允许执行该项操作，否则拒绝执行该项操作。
+
+### 方法级权限控制：
+1、开启权限方法级权限控制:```@EnableGlobalMethodSecurity(prePostEnabled = true)```
+
+2、使用注解控制方法的权限：
+````
+@PreAuthorize(spel)：在方法执行之前进行权限验证
+@PostAuthorize(spel)：在方法执行之后进行权限验证
+@PreFilter(spel)：在方法执行之前对方法集合类型的参数进行过滤
+@PostFilter(spel)：在方法执行之后对方法返回的结合类型值进行过滤
+````    
+
+3、权限控制Spring EL表达式
+上面的限控制注解中，Spring Security使用Spring EL权限验证表达式来指定访问URL或方法所需要的权限，权限验证表达式返回结果为true，则表示用户拥有访问该URL或方法的权限，如果返回结果为false，则表示没有权限。<br/>
+
+| 表达式 | 描述 |
+| ----- | --- |
+| hasRole([role])| 当前用户是否拥有指定角色。                                           |
+| hasAnyRole([role1,role2])| 多个角色是一个以逗号进行分隔的字符串。如果当前用户拥有指定角色中的任意一个则返回true。|  
+
+注意：权限权限名称需要已"ROLE_"开头
+```` 
+
+
+##  参考
+ 
+1. Spring Security 官方文档：https://docs.spring.io/spring-security/site/docs/5.1.1.RELEASE/reference/htmlsingle/
+2. JWT 官网：https://jwt.io/
+3. JJWT开源工具参考：https://github.com/jwtk/jjwt#quickstart
+4. 授权部分参考官方文档：https://docs.spring.io/spring-security/site/docs/5.1.1.RELEASE/reference/htmlsingle/#authorization
+
+4. 动态授权部分，参考博客：https://blog.csdn.net/larger5/article/details/81063438
+
+ 
     
 SecurityContext：安全上下文信息，用来存储用的认证信息
 	实现：
