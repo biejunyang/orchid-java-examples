@@ -37,42 +37,86 @@ Spring Security提供的默认实现为ProviderManager。默认他本身也并�
 并且认证管理器中可以设置多个AuthenticationProvider进行多重认证。
     
 ### 4、AuthenticationProvider(认证提供者)：
-认证逻辑的实际的执行者，Spring Security默认实现为DaoAuthenticationProvider。他会调用UserDetailServer.loadUserByUsername(name)，获取用户信息，然后和认证信息就行校验
+认证逻辑的实际的执行者，Spring Security默认实现为DaoAuthenticationProvider。他通过UserDetailService对象获取实际用户信息，然后在认证信息就行比对校验。
    
  
-##2、Spring Security默认配置
+## 2、Spring Security 表单认证基本配置
+```java
+
+@Configuration
+@EnableWebSecurity
+public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
     
-3、基本表单认证设置
-    http
-        .authorizeRequests()
-            .antMatchers("/login").permitAll()
-            .anyRequest().authenticated()
-            .and()
-        .formLogin()
-            .loginPage("/login").loginProcessingUrl("/login")
-            .usernameParameter("username").passwordParameter("password")
-            .defaultSuccessUrl("/welcome.html")
-    //                    .successForwardUrl("/welcome.html")
-    //                    .successHandler(new AuthenticationSuccessHandler() {
-    //                        @Override
-    //                        public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
-    //
-    //                        }
-    //                    })
-            .failureUrl("/login?error1")
-    //                    .failureForwardUrl("/login?error2")
-    //                    .failureHandler(new myAuthenticationFailureHandler() {
-    //                        @Override
-    //                        public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-    //
-    //                        }
-    //                    })
-                .permitAll()
-            .and()
-        .logout().and()
-        .csrf().disable()
-    ;
+    /**
+     * 全局安全约束设置
+     * @param web
+     * @throws Exception
+     */
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().mvcMatchers("/favicon.ico");
+    }
+
     
+    /**
+     * 密码家铭方式管理
+     * @return
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+
+    /**
+     * 获取用户信息管理
+     */
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+
+    /**
+     * 认证管理器设置
+     * @param auth
+     * @throws Exception
+     */
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        //自定义认证处理
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+    }
+
+
+
+    /**安全约束、认证方式设置
+     * @param http
+     * @throws Exception
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/login").permitAll()
+                .anyRequest().authenticated().and()
+            .formLogin()
+                .loginPage("/login").loginProcessingUrl("/login")
+                .usernameParameter("username").passwordParameter("password")
+                .defaultSuccessUrl("/welcome.html")
+//                .successForwardUrl("/welcome.html")
+//                .successHandler(myAuthenticationSuccesHandler)
+                .failureUrl("/loginPage2?error")
+//                .failureForwardUrl("/login?error2")
+//                .failureHandler(myAuthenticationFailureHandler)
+                .and()
+            .logout().and()
+            .csrf().disable()
+        ;
+    }
+
+}
+
+```
+ 
     a、设置认证方式为表单认证，并允许访问登录相关端点服务
         注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
         
