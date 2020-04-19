@@ -41,6 +41,8 @@ Spring Security提供的默认实现为ProviderManager。默认他本身也并�
    
  
 ## 2、Spring Security 表单认证基本配置
+
+### 代码
 ```java
 
 @Configuration
@@ -117,39 +119,40 @@ public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
 
 ```
  
-    a、设置认证方式为表单认证，并允许访问登录相关端点服务
-        注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
-        
-    b、登录相关端点设置
-        http.loginPage("/login")//登录页面设置
-            .loginProcessingUrl("/login")//登录请求设置,认证过滤器将拦击处理该请求进行认证
-            .usernameParameter("username").passwordParameter("password")//表单参数设置
-        
-    c、登录成功处理
-        认证成功后，结果由AuthenticationSuccessHandler处理，如：
-         http.defaultSuccessUrl("/welcome.html")//登录成功后中定向到该请求
-             .successForwardUrl("/welcome.html")//登录成功请求转发到给请求
-             .successHandler(new AuthenticationSuccessHandler());//使用自定义认证成功处理器执行处理
-             
-        注意3中方式任选其一，后者覆盖前者、只有一个有效。Spring Security内置的认证成功处理器：
-        
-         SimpleUrlAuthenticationSuccessHandler：简单请求重定向处理
-         SavedRequestAwareAuthenticationSuccessHandler：跳转到认证之前的那个请求地址
-        
-    d、登录失败处理
-        认证失败后，结果由交给AuthenticationFailureHandler处理，如：
-        
-        http.failureUrl("/login?error1")//登录失败后中定向到该请求
-            .failureForwardUrl("/login?error2")//登录失败请求转发到给请求
-            .failureHandler(new AuthenticationFailureHandler());//使用自定义认证成功处理器执行处理
-        
-        3中方式任选其一，后者覆盖前者、只有一个有效。
-        在Spring Security内置了几种验证失败处理器：
-            DelegatingAuthenticationFailureHandler将AuthenticationException子类委托给不同的AuthenticationFailureHandler，这意味着我们可以为AuthenticationException的不同实例创建不同的行为
-            ExceptionMappingAuthenticationFailureHandler根据AuthenticationException的完整类名将用户重定向到特定的URL,内置的异常类包括BadCredentialsException、CaptchaException、AccountExpiredException、LockedException等
-            SimpleUrlAuthenticationFailureHandler是默认使用的组件，如果指定，它会将用户重定向到failureUrl;否则，它只会返回401响应
-                    
-    e、其他功能如：登录注销设置、禁用csfr
+ ### 说明
+a、设置认证方式为表单认证，并允许访问登录相关端点服务
+    注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前
+    
+b、登录相关端点设置
+    http.loginPage("/login")//登录页面设置
+        .loginProcessingUrl("/login")//登录请求设置,认证过滤器将拦击处理该请求进行认证
+        .usernameParameter("username").passwordParameter("password")//表单参数设置
+    
+c、登录成功处理
+    认证成功后，结果由AuthenticationSuccessHandler处理，如：
+     http.defaultSuccessUrl("/welcome.html")//登录成功后中定向到该请求
+         .successForwardUrl("/welcome.html")//登录成功请求转发到给请求
+         .successHandler(new AuthenticationSuccessHandler());//使用自定义认证成功处理器执行处理
+         
+    注意3中方式任选其一，后者覆盖前者、只有一个有效。Spring Security内置的认证成功处理器：
+    
+     SimpleUrlAuthenticationSuccessHandler：简单请求重定向处理
+     SavedRequestAwareAuthenticationSuccessHandler：跳转到认证之前的那个请求地址
+    
+d、登录失败处理
+    认证失败后，结果由交给AuthenticationFailureHandler处理，如：
+    
+    http.failureUrl("/login?error1")//登录失败后中定向到该请求
+        .failureForwardUrl("/login?error2")//登录失败请求转发到给请求
+        .failureHandler(new AuthenticationFailureHandler());//使用自定义认证成功处理器执行处理
+    
+    3中方式任选其一，后者覆盖前者、只有一个有效。
+    在Spring Security内置了几种验证失败处理器：
+        DelegatingAuthenticationFailureHandler将AuthenticationException子类委托给不同的AuthenticationFailureHandler，这意味着我们可以为AuthenticationException的不同实例创建不同的行为
+        ExceptionMappingAuthenticationFailureHandler根据AuthenticationException的完整类名将用户重定向到特定的URL,内置的异常类包括BadCredentialsException、CaptchaException、AccountExpiredException、LockedException等
+        SimpleUrlAuthenticationFailureHandler是默认使用的组件，如果指定，它会将用户重定向到failureUrl;否则，它只会返回401响应
+                
+e、其他功能如：登录注销设置、禁用csfr
     
 4、获取已认证用户信息
 
