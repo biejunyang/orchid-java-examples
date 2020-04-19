@@ -6,15 +6,16 @@
     <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 </head>
 <body>
+<div id="app" style="margin: 20px 20%">
     <h1>login</h1>
     <form action="/login" method="post">
-    username:<input type="text" name="username"><br>
-    password:<input type="password" name="password"><br>
-    validateCode:<input type="text" name="code"><br>
+    用户名:<input type="text" name="username"><br>
+    密码:<input type="password" name="password"><br>
+    验证码:<input type="text" name="code"><br>
         <input type="submit" value="form submit">
         <button type="button" id="ajax_submit">ajax submit</button>
     </form>
-
+</div>
     <script type="text/javascript">
         $(function(){
             $("#ajax_submit").click(function (e) {

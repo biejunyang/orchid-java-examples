@@ -69,10 +69,8 @@ public class MyAuthenticationProvide implements AuthenticationProvider {
         if(!details.getCode().equals("123")){
             throw new BadCredentialsException("验证码错误!");
         }
-        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
-        UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,authorities);
+        UsernamePasswordAuthenticationToken authenticatedToken=new UsernamePasswordAuthenticationToken(username,password,userDetails.getAuthorities());
         /**
          * 认证完成后，设置一些详情信息
          */

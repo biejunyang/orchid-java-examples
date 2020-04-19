@@ -1,13 +1,9 @@
 package com.orchid.examples.security.auth;
 
-import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.stereotype.Component;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -17,16 +13,25 @@ import java.util.ArrayList;
 
 public class MyAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 
-
-
+    /**
+     * 定义过滤器处理登录请求url
+     */
     public MyAuthenticationProcessingFilter() {
         super(new AntPathRequestMatcher("/login", "POST"));
-//        setAuthenticationSuccessHandler();
     }
 
+
+    /**
+     * 认证处理
+     * @param request
+     * @param response
+     * @return
+     * @throws AuthenticationException
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String code =request.getParameter("code");

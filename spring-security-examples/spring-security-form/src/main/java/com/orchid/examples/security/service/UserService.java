@@ -18,8 +18,15 @@ public class UserService implements UserDetailsService {
             user.setUsername("admin");
             user.setPassword("{noop}123456");
             user.setAuthorities(CollectionUtil.newArrayList(
-                    new SimpleGrantedAuthority("ADMIN"),
-                    new SimpleGrantedAuthority("USER")));
+                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_USER")));
+            return user;
+        }else if("user".equals(s)){
+            MyAuthenticationUser user=new MyAuthenticationUser();
+            user.setUsername("user");
+            user.setPassword("{noop}123456");
+            user.setAuthorities(CollectionUtil.newArrayList(
+                    new SimpleGrantedAuthority("ROLE_USER")));
             return user;
         }
         return null;

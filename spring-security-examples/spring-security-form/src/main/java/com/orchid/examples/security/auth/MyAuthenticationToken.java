@@ -20,8 +20,4 @@ public class MyAuthenticationToken extends UsernamePasswordAuthenticationToken {
         super(principal, credentials, authorities);
     }
 
-
-
-
-
 }

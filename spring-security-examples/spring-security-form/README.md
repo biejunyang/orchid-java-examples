@@ -112,6 +112,14 @@ public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
                 .and()
             .logout().and()
             .csrf().disable()
+            .exceptionHandling()
+//                .accessDeniedPage("/access_deny.html")
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
+
+                    }
+                })
         ;
     }
 
@@ -157,6 +165,7 @@ d、登录失败处理
 ```            
 e、其他功能如：登录注销设置、禁用csfr
     
+f、访问异常处理：权限不够时spring security则抛出AccessDeniedException异常
 ## 4、获取已认证用户信息
 ```java  
 @GetMapping("/userInfo")
@@ -536,11 +545,79 @@ Spring Security提供了默认的权限控制功能，需要预先分配给用�
 
 | 表达式 | 描述 |
 | ----- | --- |
-| hasRole([role])| 当前用户是否拥有指定角色。                                           |
+| hasRole([role])| 当前用户是否拥有指定角色。|
 | hasAnyRole([role1,role2])| 多个角色是一个以逗号进行分隔的字符串。如果当前用户拥有指定角色中的任意一个则返回true。|  
+| hasAuthority([auth])| 等同于hasRole|
+| hasAnyAuthority([auth1,auth2])| 等同于hasAnyRole|
+| Principle| 代表当前用户的principle对象|
+| authentication| 直接从SecurityContext获取的当前Authentication对象|
+| permitAll| 总是返回true，表示允许所有的|
+| denyAll| 总是返回false，表示拒绝所有的。|
+| isAnonymous()| 当前用户是否是一个匿名用户。|
+| isRememberMe()| 表示当前用户是否是通过Remember-Me自动登录的。|
+| isAuthenticated()| 表示当前用户是否已经登录认证成功了。|
+| isFullyAuthenticated()| 如果当前用户既不是一个匿名用户，同时又不是通过Remember-Me自动登录的，则返回true。。|
 
+```
 注意：权限权限名称需要已"ROLE_"开头
 ```` 
+
+### access动态url认证
+```java
+        http
+            .authorizeRequests()
+                .anyRequest().authenticated()
+                .anyRequest().access("@authorityService.hasPermission(request,authentication)");
+```
+
+
+
+
+### 
+4、示例
+```java
+@PreAuthorize("hasRole('ROLE_ADMIN')")
+public void addUser(User user) {
+   ...
+}
+
+@PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+public User find(int id) {
+   return null;
+}
+
+@PreAuthorize("#id<10")
+public User find(int id) {
+   return null;
+}
+
+@PreAuthorize("principal.username.equals(#username)")
+public User find(String username) {
+   return null;
+}
+
+@PreAuthorize("#user.name.equals('abc')")
+public void add(User user) {
+   ...
+}
+
+@PostAuthorize("returnObject.id%2==0")
+public User find(int id) {
+   ...
+   return user;
+}
+
+@PostFilter("filterObject.id%2==0")
+public List<User> findAll() {
+   List<User> userList = new ArrayList<User>();
+   ...
+   return userList;
+}
+
+@PreFilter(filterTarget="ids", value="filterObject%2==0")
+public void delete(List<Integer> ids, List<String> usernames) {
+   ...
+}
 
 
 ##  参考

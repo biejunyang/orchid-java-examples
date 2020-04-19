@@ -1,17 +1,9 @@
 server:
   port: 8080
-
+  servlet:
+    session:
+      timeout: 30m
 spring:
-#  session:
-#    store-type: redis
   resources:
     static-locations: classpath:/static/
-  redis:
-    host: localhost
-    port: 6379
-    database: 1
-    lettuce:
-      pool:
-        max-active: 8 #最大连接数
-        max-idle: 8 #最大空闲连接
-        min-idle: 0 #最小空闲连接
+

@@ -4,20 +4,18 @@ import com.orchid.examples.security.auth.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.HttpRequestResponseHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.session.SessionInformationExpiredEvent;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 
@@ -28,6 +26,7 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
@@ -50,7 +49,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         //自定义认证处理
         auth.authenticationProvider(myAuthenticationProvide);
-
 //        auth.inMemoryAuthentication()
 //                .withUser("admin").password("{noop}123456").roles("ADMIN", "USER")
 //                .and().withUser("user").password("{noop}123456").roles("USER");
@@ -68,6 +66,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
                 .antMatchers("/login").permitAll()
                 .anyRequest().authenticated()
+//                .anyRequest().access("@authorityService.hasPermission(request,authentication)")
                 .and()
             .formLogin()
                 .loginPage("/login")
@@ -86,7 +85,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //                    }
 //                })
                 .and()
-            .logout().and()
+            .logout()
+                .logoutSuccessUrl("/login")
+                .permitAll().and()
             .csrf().disable()
             .sessionManagement()
                 .maximumSessions(1)
@@ -94,6 +95,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .expiredSessionStrategy(new SessionInformationExpiredStrategy() {
                     @Override
                     public void onExpiredSessionDetected(SessionInformationExpiredEvent sessionInformationExpiredEvent) throws IOException, ServletException {
+
+                    }
+                }).and().and()
+            .exceptionHandling()
+//                .accessDeniedPage("/access_deny.html")
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
 
                     }
                 })
