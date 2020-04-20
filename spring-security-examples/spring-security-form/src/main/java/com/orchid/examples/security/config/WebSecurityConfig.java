@@ -12,8 +12,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.session.SessionInformationExpiredEvent;
@@ -99,11 +101,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     }
                 }).and().and()
             .exceptionHandling()
-//                .accessDeniedPage("/access_deny.html")
                 .accessDeniedHandler(new AccessDeniedHandler() {
                     @Override
                     public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
-
+                        System.out.println("xxxxxxxxxxxxxxxxxxxxxx");
                     }
                 })
         ;

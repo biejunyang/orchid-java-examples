@@ -1,5 +1,5 @@
 # spring-securiy-from
-> 此 demo 主要演示了 Spring Boot 如何整合 Spring Securitiy框架进行安全认证管理。并介绍了Spring Security的基本认证流程，以及使用表单认证的方式进行认证，自定义认证方式实现。
+> 此 demo 主要演示了 Spring Boot 整合 Spring Securitiy 并使用 JWT Token进行安全认证管理。
 
 ## 1、pom依赖添加
 ```xml
@@ -165,32 +165,7 @@ d、登录失败处理
 ```            
 e、其他功能如：登录注销设置、禁用csfr
     
-    
-f、访问异常处理：
-Spring security过滤器链中内置一个异常处理拦截器ExceptionTranslationFilter，来处理安全保护过程中出现的异常，主要有两种：
-````
-AuthenticationException：用户认证过程出现的异常，注意区分认证失败处理器
-AccessDeniedException：访问权限不够时抛出的异常
-````
-```java
-http.exceptionHandling()
-    .authenticationEntryPoint(new AuthenticationEntryPoint() {
-        @Override
-        public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-
-        }
-    })
-//                .accessDeniedPage("/access_deny.html")
-    .accessDeniedHandler(new AccessDeniedHandler() {
-        @Override
-        public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
-            
-        }
-    })
-;
-```
-
-
+f、访问异常处理：权限不够时spring security则抛出AccessDeniedException异常
 ## 4、获取已认证用户信息
 ```java  
 @GetMapping("/userInfo")
