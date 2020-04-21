@@ -19,153 +19,30 @@
 </dependency>
 ```
 
-## 2、Spring Security基本认证流程
+## 2、Spring Security 权限控制原理
 
-### 1、FilterChianProxy(认证入口)：
+### 1、FilterSecurityInterceptor(安全认证过滤器)：
+Spring Security过滤器链中的最后一个过滤器，其作用是保护请求的资源，校验当前请求是否已经过认证，并且用户是否有权限访问该请求。未经过认证则抛出AuthenticationException异常，权限不够则抛出AccessDenyException异常。其实现流程：
+````
+通过SecurityContextHolder.getContext().getAuthentication()获取当请求上线文中的Authentication对象。通过该Authentication对象中的认证状态，和用户的角色，权限信息判断是否有权限访资源。
+````
 
-Spring Security的核心过滤器、Spring Security安全认证的入口，拦截所有的请求根据需要进行安全保护和认证。具体的保护和认证操作委托给内置的一个过滤器链来实现。
+### 2、SecurityContextPersistenceFilter(安全上下文持久化过滤器):
+当前请求的安全上的准备和获取。请求开始时从配置好的 SecurityContextRepository中获取 SecurityContext，然后把它设置给 SecurityContextHolder。在请求完成后将 SecurityContextHolder 持有的 SecurityContext 再保存到配置好的 SecurityContextRepository，同时清除 securityContextHolder 所持有的 SecurityContext；
+SecurityContext中存储了用户的认证信息，SecurityContextRepository默认的实现为HttpSessionSecurityContextRespotiory，及默认从session对象获取认证信息。
 
-### 2、AbstractAuthenticationProcessingFilter(认证过滤器)：
-认证过滤器的抽象接口，过滤器包含了一个认证过滤器来实现登录认证，Spring Security表单登录认证的认证过滤器实现为UsernamePasswordAuthenticationFilter，拦截登录认证请求默认为POST"/login"。<br />
-实现该过滤器本身并不直接进行认证处理，而是将请求封装成UsernamePasswordAuthenticationToken对象、然后调用设置的AuthenticationManager对象就行认证处理。<br />
-认证成功后AuthenticationManager返回一个已认证的AuthenticationManager对象，并保存到认证上下文中，然后然后调用AuthenticationSuccessHandler对象执行认证成功处理。<br />
-认证失败则调用AuthenticationFailureHandler对象执行失败处理 
-     
-### 3、AuthenticationManager(认证管理器)：
-认证管理器的作用是接收认证过滤器传递的未认证的Authentication认证信息对象，认证成功则返回一个已认证的Authentication对象。<br />
-Spring Security提供的默认实现为ProviderManager。默认他本身也并不直接认证，而是调用实际的认证提供者AuthenticationProvider处理认证
-并且认证管理器中可以设置多个AuthenticationProvider进行多重认证。
-    
-### 4、AuthenticationProvider(认证提供者)：
-认证逻辑的实际的执行者，Spring Security默认实现为DaoAuthenticationProvider。他通过UserDetailService对象获取实际用户信息，然后在认证信息就行比对校验。
-   
  
-## 3、Spring Security 表单认证基本配置
+## 3、Spring Security JWT 实现原理
+````
+1、JWT鉴权中用户的认证信息Authentication对象不是存在在Session对象中，而是使用JWT Token来承载，发送给客户端。后端并不需要存储用户状态，客户端访问全资源时通过携带授权的JWT Token来访问资源。
 
-### 代码
-```java
+2、通过实现JWT的鉴权过滤器，校验请求访问时携带的Token是否有效，有效则表示认证通过，然后解析Token获取token对应的用户认证信息，并且保存在SecurityContext中。<br/>
+   注意token校验通过后，需要将token对应的认证信息保存到SecurityContext中，因为Spring Security最后的FilterSecurityInterceptor需要从中获取认证Authentication对象进行进一步权限认证。
 
-@Configuration
-@EnableWebSecurity
-public class WebSecurityConfig2 extends WebSecurityConfigurerAdapter {
-    
-    /**
-     * 全局安全约束设置
-     * @param web
-     * @throws Exception
-     */
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().mvcMatchers("/favicon.ico");
-    }
-
-    
-    /**
-     * 密码家铭方式管理
-     * @return
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
+3、实现登录请求端点，返回JWT Token.
+````
 
 
-    /**
-     * 获取用户信息管理
-     */
-    @Autowired
-    private UserDetailsService userDetailsService;
-
-
-    /**
-     * 认证管理器设置
-     * @param auth
-     * @throws Exception
-     */
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        //自定义认证处理
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
-    }
-
-
-
-    /**安全约束、认证方式设置
-     * @param http
-     * @throws Exception
-     */
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-            .authorizeRequests()
-                .antMatchers("/login").permitAll()
-                .anyRequest().authenticated().and()
-            .formLogin()
-                .loginPage("/login").loginProcessingUrl("/login")
-                .usernameParameter("username").passwordParameter("password")
-                .defaultSuccessUrl("/welcome.html")
-//                .successForwardUrl("/welcome.html")
-//                .successHandler(myAuthenticationSuccesHandler)
-                .failureUrl("/loginPage2?error")
-//                .failureForwardUrl("/login?error2")
-//                .failureHandler(myAuthenticationFailureHandler)
-                .and()
-            .logout().and()
-            .csrf().disable()
-            .exceptionHandling()
-//                .accessDeniedPage("/access_deny.html")
-                .accessDeniedHandler(new AccessDeniedHandler() {
-                    @Override
-                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
-
-                    }
-                })
-        ;
-    }
-
-}
-
-```
- 
-### 说明
-a、设置认证方式为表单认证，并允许访问登录相关端点服务
-   ```注意：permitAll()允许访问的请求，需设置在authenticated()需要认证的请求之前```
-    
-b、登录相关端点设置
-```java    
-    http.loginPage("/login")//登录页面设置
-        .loginProcessingUrl("/login")//登录请求设置,认证过滤器将拦击处理该请求进行认证
-        .usernameParameter("username").passwordParameter("password")//表单参数设置
-```
-
-c、登录成功处理
-  
-    认证成功后，结果由AuthenticationSuccessHandler处理，如：
-     http.defaultSuccessUrl("/welcome.html")//登录成功后中定向到该请求
-         .successForwardUrl("/welcome.html")//登录成功请求转发到给请求
-         .successHandler(new AuthenticationSuccessHandler());//使用自定义认证成功处理器执行处理
-         
-    注意3中方式任选其一，后者覆盖前者、只有一个有效。Spring Security内置的认证成功处理器：
-    
-     SimpleUrlAuthenticationSuccessHandler：简单请求重定向处理
-     SavedRequestAwareAuthenticationSuccessHandler：跳转到认证之前的那个请求地址
-    
-d、登录失败处理
-```
-    认证失败后，结果由交给AuthenticationFailureHandler处理，如：
-    http.failureUrl("/login?error1")//登录失败后中定向到该请求
-        .failureForwardUrl("/login?error2")//登录失败请求转发到给请求
-        .failureHandler(new AuthenticationFailureHandler());//使用自定义认证成功处理器执行处理
-    
-    3中方式任选其一，后者覆盖前者、只有一个有效。
-    在Spring Security内置了几种验证失败处理器：
-        DelegatingAuthenticationFailureHandler将AuthenticationException子类委托给不同的AuthenticationFailureHandler，这意味着我们可以为AuthenticationException的不同实例创建不同的行为
-        ExceptionMappingAuthenticationFailureHandler根据AuthenticationException的完整类名将用户重定向到特定的URL,内置的异常类包括BadCredentialsException、CaptchaException、AccountExpiredException、LockedException等
-        SimpleUrlAuthenticationFailureHandler是默认使用的组件，如果指定，它会将用户重定向到failureUrl;否则，它只会返回401响应
-```            
-e、其他功能如：登录注销设置、禁用csfr
-    
-f、访问异常处理：权限不够时spring security则抛出AccessDeniedException异常
 ## 4、获取已认证用户信息
 ```java  
 @GetMapping("/userInfo")

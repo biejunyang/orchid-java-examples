@@ -169,7 +169,7 @@ e、其他功能如：登录注销设置、禁用csfr
 f、访问异常处理：
 Spring security过滤器链中内置一个异常处理拦截器ExceptionTranslationFilter，来处理安全保护过程中出现的异常，主要有两种：
 ````
-AuthenticationException：用户认证过程出现的异常，注意区分认证失败处理器
+AuthenticationException：用户未认证异常，注意区分认证失败处理器
 AccessDeniedException：访问权限不够时抛出的异常
 ````
 ```java

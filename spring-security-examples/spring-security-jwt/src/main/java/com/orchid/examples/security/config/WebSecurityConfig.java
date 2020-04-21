@@ -16,6 +16,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -43,8 +47,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        super.configure(auth);
+//        User.builder().username("admin").password("{noop}123456")
+        auth.userDetailsService(new UserDetailsService() {
+            @Override
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                if(username.equals("admin")){
+                    return User.builder().username("admin").password("{noop}123456").roles("ADMIN", "USER").build();
+                }else if(username.equals("user")){
+                    return User.builder().username("user").password("{noop}123456").roles("USER").build();
+                }
+                return null;
+            }
+        }).passwordEncoder(passwordEncoder());
     }
+
 
 
 
@@ -54,7 +70,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/login").permitAll()
+                .anyRequest().authenticated().and()
+            .formLogin().disable()
+            .sessionManagement().disable()
+            .csrf().disable()
+            .exceptionHandling()
+                .authenticationEntryPoint(new AuthenticationEntryPoint() {
+                    @Override
+                    public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
+                        ResponseUtil.renderJson(httpServletResponse, R.error("未登录"));
+                    }
+                })
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
+                        ResponseUtil.renderJson(httpServletResponse, R.error("权限不够"));
+                    }
+                });
+//        JwtAuthenticationFilter jwtAuthenticationFilter=new JwtAuthenticationFilter();
+//        jwtAuthenticationFilter.setAuthenticationManager(this.authenticationManagerBean());
+//        http.addFilter(jwtAuthenticationFilter);
 
+        JWTAuthorizationFilter jwtAuthorizationFilter=new JWTAuthorizationFilter();
+        http.addFilterAt(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     @Override

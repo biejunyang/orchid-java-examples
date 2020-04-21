@@ -41,7 +41,9 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 //        }
         String username=request.getParameter("username");
         String password=request.getParameter("password");
-        return getAuthenticationManager().authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        Authentication authentication= getAuthenticationManager().authenticate(new UsernamePasswordAuthenticationToken(username, password));
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return authentication;
     }
 
     // 成功验证后调用的方法

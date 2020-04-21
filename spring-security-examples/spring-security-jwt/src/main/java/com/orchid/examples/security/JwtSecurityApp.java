@@ -20,18 +20,11 @@ public class JwtSecurityApp {
         SpringApplication.run(JwtSecurityApp.class, args);
     }
 
-//    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/hello")
     public String hello(){
         return "hello";
     }
 
-
-
-    @GetMapping("/welcome")
-    public String welcome(){
-        return "welcome.html";
-    }
 
 
     @GetMapping("/userInfo")
