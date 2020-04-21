@@ -43,7 +43,12 @@ SecurityContext中存储了用户的认证信息，SecurityContextRepository默�
 ````
 
 
-## 4、获取已认证用户信息
+## 4、Jwt鉴权实现
+
+### Jwt权限认证过滤器JwtAuthorizationFilter
+校验用户请求中携带的Token,Token校验成功，则解析Token获取对应的用户认证信息Authentication对象，并放到安全上下文中，校验失败则返回错误码
+
+
 ```java  
 @GetMapping("/userInfo")
 @ResponseBody
