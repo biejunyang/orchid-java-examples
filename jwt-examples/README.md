@@ -2,7 +2,7 @@
 > 此 demo 主要演示了Java 中JWT的使用
 
 
-## JOSE(JavaScript对象签名和加密)框架介绍
+## 1、JOSE(JavaScript对象签名和加密)框架介绍
 JOSE是一个框架，旨在提供一种在各方之间安全传递消息的方法。JOSE框架中定义了一系列的规范来实现此目的：
 ````
     JSON Web Token (JWT)：JSON Web令牌（RFC7519），定义了一种可以签名或加密的标准格式； 
@@ -12,7 +12,7 @@ JOSE是一个框架，旨在提供一种在各方之间安全传递消息的方�
     JSON Web Key (JWK)：JSON Web密钥（RFC7517） ， 定义加密密钥和密钥集的表示方式；  
 ````
 
-## Nimbus JOSE JWT
+## 2、Nimbus JOSE JWT
 nimbus-jose-jwt是一个操作jwt的Java类库，对JOSE框架中的规范进行了一定的实现。可以通过JOSE中定义的对象(JWS、JWT)在请求之间安全传输数据。
 
 ### pom依赖添加
@@ -24,7 +24,7 @@ nimbus-jose-jwt是一个操作jwt的Java类库，对JOSE框架中的规范进行
 </dependency>
 ```
 
-## JWS(Json Web Signature)实现
+## 3、JWS(Json Web Signature)实现
 
 JWS使用了HMAC算法或者数据签名(digital signature)对需要传输的数据进行安全保护。保护的数据可以纯文本、json、二进制流、甚至是JWT对象等数据。
 
@@ -123,7 +123,7 @@ RSASSASigner：RSA签名对象、对jws对象进行数字签名
 RSASSAVerifier：验签对象
 ```
 
-## JWT(Json Web Token)实现
+## 4、JWT(Json Web Token)实现
 JWT是一种基于json数据传出的Web开放标准，他定义了一种可以签名或加密的标准格式。
 
 ### JWT创建和解析
@@ -194,7 +194,7 @@ JWT和JWS的实现比较相似，实际就是JWT中对需要加密和验证的�
 
 
 
-## JWE(Json Web Encryption )
+## 5、JWE(Json Web Encryption )
 Json Web数据加密。JWS、JWT中负载Payload中的数据默认是没有加密的，传输时只要使用base64算法转换成字符串了。使用JWE可以传输数据进行加密。
 
 ### JWT payload的加密和解析
@@ -327,7 +327,90 @@ public static void testSignAndEncryptJWTClaim() throws JOSEException, ParseExcep
 
 
 
-## 2、Spring Security 权限控制原理
+## 6、JWK(Json Web Key)
+JWK定义加密密钥和密钥集的表示方式。秘钥可能由其他环境生成，并JWK的形式对需要解密方进行开发。解密方获取JWK后，可以数据进行解密。
+JWK是已json串的形式展示秘钥的相关信息
+
+
+### JWK对象的创建
+```java
+    // Generate 2048-bit RSA key pair in JWK format, attach some metadata
+    RSAKey jwk = new RSAKeyGenerator(2048)
+        .keyUse(KeyUse.SIGNATURE) // indicate the intended use of the key
+        .keyID(UUID.randomUUID().toString()) // give the key a unique ID
+        .generate();
+    
+    // Output the private and public RSA JWK parameters
+    System.out.println(jwk);
+    
+    // Output the public RSA JWK parameters only
+    System.out.println(jwk.toPublicJWK());
+```
+
+```
+System.out.println(jwk)：展示公钥和秘钥的相关信息
+System.out.println(jwk.toPublicJWK()):仅展示公钥信息
+```
+
+### JWK对象获取并使用JWK对象解密
+```java
+    RSAKey jwk=(RSAKey)JWK.parse(map.get("jwk"));
+        
+    SignedJWT jwt=SignedJWT.parse(map.get("jwt"));
+
+    JWSVerifier jwsVerifier=new RSASSAVerifier(jwk.toRSAPublicKey());
+    if(jwt.verify(jwsVerifier)){
+        System.out.println(jwt.getJWTClaimsSet().getSubject());
+    }else{
+        System.out.println("验签失败");
+    }
+```
+
+### JWKSet秘钥集
+
+JWKSet秘钥集获取
+````
+1、从本地或者远程json文件加载JwkSet
+    // Load JWK set from filesystem
+    JWKSet localKeys = JWKSet.load(new File("my-key-store.json"));
+
+    // Load JWK set from URL
+    JWKSet publicKeys = JWKSet.load(new URL("https://c2id.com/jwk-set.json"));
+
+2、从远程url获取
+    JWKSet publicKeys = JWKSet.load(new URL("https://c2id.com/jwk-set.json"));
+    
+3、从Java keyStore中加载JwkSet
+    // Specify the key store type, e.g. JKS
+    KeyStore keyStore = KeyStore.getInstance("JKS");
+    
+    // If you need a password to unlock the key store
+    char[] password = "secret".toCharArray();
+    
+    // Load the key store from file
+    keyStore = keyStore.load(new FileInputStream("myKeyStore.jks", password);
+    
+    // Extract keys and output into JWK set; the secord parameter allows lookup 
+    // of passwords for individual private and secret keys in the store
+    JWKSet jwkSet = JWKSet.load(keyStore, null);
+    
+````
+
+JWK Selector选择器、从JWKSet秘钥集中匹配
+
+````
+    List<JWK> matches = new JWKSelector(
+        new JWKMatcher.Builder()
+            .keyType(KeyType.RSA)
+            .keyID("123456")
+            .build()
+        ).select(jwkSet);
+    
+    System.out.println("Found " + matches.size() + " matching JWKs");
+````
+
+
+
 
 ### 1、FilterSecurityInterceptor(安全认证过滤器)：
 Spring Security过滤器链中的最后一个过滤器，其作用是保护请求的资源，校验当前请求是否已经过认证，并且用户是否有权限访问该请求。未经过认证则抛出AuthenticationException异常，权限不够则抛出AccessDenyException异常。其实现流程：
