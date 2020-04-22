@@ -17,6 +17,7 @@
         <module>repeated-insert</module>
         <module>spring-boot-examples</module>
         <module>spring-security-examples</module>
+        <module>jwt-examples</module>
     </modules>
     <dependencies>
         <dependency>
