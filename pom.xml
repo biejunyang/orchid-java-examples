@@ -19,6 +19,7 @@
         <module>spring-security-examples</module>
         <module>jwt-examples</module>
         <module>java-security-example</module>
+        <module>redis-example</module>
     </modules>
     <dependencies>
         <dependency>
