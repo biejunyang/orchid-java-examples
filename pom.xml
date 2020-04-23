@@ -18,6 +18,7 @@
         <module>spring-boot-examples</module>
         <module>spring-security-examples</module>
         <module>jwt-examples</module>
+        <module>java-security-example</module>
     </modules>
     <dependencies>
         <dependency>
