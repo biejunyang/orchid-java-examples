@@ -14,6 +14,22 @@
     }
 
 
+
+
+Spring Boot自动配置本身不会自动把/swagger-ui.html这个路径映射到对应的目录META-INF/resources/下面。我们加上这个映射即可。
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+
+        registry.addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+    }
+    
+    
+    
+
 3、全局请求操作添加：
     参数类型支持：header, cookie, body, query etc
     a、构建全局参数：
@@ -35,4 +51,3 @@
                         .build().globalOperationParameters(aParameters);
                         
 3、Swagger API访问添加权限控制：
-    
