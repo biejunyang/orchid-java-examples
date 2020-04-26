@@ -21,15 +21,17 @@
 
 ## 2、Spring Security 权限控制原理
 
-### 1、FilterSecurityInterceptor(安全认证过滤器)：
+### 1、SecurityContextPersistenceFilter(安全上下文持久化过滤器):
+当前请求的安全上的准备和获取。请求开始时从配置好的 SecurityContextRepository中获取 SecurityContext，然后把它设置给 SecurityContextHolder。在请求完成后将 SecurityContextHolder 持有的 SecurityContext 再保存到配置好的 SecurityContextRepository，同时清除 securityContextHolder 所持有的 SecurityContext；
+SecurityContext中存储了用户的认证信息，SecurityContextRepository默认的实现为HttpSessionSecurityContextRespotiory，及默认从session对象获取认证信息。
+
+
+### 2、FilterSecurityInterceptor(安全认证过滤器)：
 Spring Security过滤器链中的最后一个过滤器，其作用是保护请求的资源，校验当前请求是否已经过认证，并且用户是否有权限访问该请求。未经过认证则抛出AuthenticationException异常，权限不够则抛出AccessDenyException异常。其实现流程：
 ````
 通过SecurityContextHolder.getContext().getAuthentication()获取当请求上线文中的Authentication对象。通过该Authentication对象中的认证状态，和用户的角色，权限信息判断是否有权限访资源。
 ````
 
-### 2、SecurityContextPersistenceFilter(安全上下文持久化过滤器):
-当前请求的安全上的准备和获取。请求开始时从配置好的 SecurityContextRepository中获取 SecurityContext，然后把它设置给 SecurityContextHolder。在请求完成后将 SecurityContextHolder 持有的 SecurityContext 再保存到配置好的 SecurityContextRepository，同时清除 securityContextHolder 所持有的 SecurityContext；
-SecurityContext中存储了用户的认证信息，SecurityContextRepository默认的实现为HttpSessionSecurityContextRespotiory，及默认从session对象获取认证信息。
 
  
 ## 3、Spring Security JWT 实现原理
