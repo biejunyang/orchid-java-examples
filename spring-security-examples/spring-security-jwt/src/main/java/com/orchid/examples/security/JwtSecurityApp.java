@@ -2,6 +2,7 @@ package com.orchid.examples.security;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,8 @@ public class JwtSecurityApp {
         SpringApplication.run(JwtSecurityApp.class, args);
     }
 
+
+
     @GetMapping("/hello")
     public String hello(){
         return "hello";
@@ -27,6 +30,7 @@ public class JwtSecurityApp {
 
 
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/userInfo")
     @ResponseBody
     public Object userInfo(){

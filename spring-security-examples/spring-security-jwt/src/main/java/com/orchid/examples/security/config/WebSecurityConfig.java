@@ -34,16 +34,10 @@ import java.io.IOException;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 
-
-    /**
-     * 用户认证管理
-     * @param auth
-     * @throws Exception
-     */
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-//        User.builder().username("admin").password("{noop}123456")
-        auth.userDetailsService(new UserDetailsService() {
+    @Bean
+    public UserDetailsService userDetailsService(){
+        return new UserDetailsService() {
             @Override
             public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
                 if(username.equals("admin")){
@@ -53,7 +47,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 }
                 return null;
             }
-        }).passwordEncoder(passwordEncoder());
+        };
+    }
+
+
+    /**
+     * 用户认证管理
+     * @param auth
+     * @throws Exception
+     */
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService()).passwordEncoder(passwordEncoder());
     }
 
 
@@ -73,21 +78,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionManagement().disable()
             .csrf().disable()
             .exceptionHandling()
-                .authenticationEntryPoint(new AuthenticationEntryPoint() {
-                    @Override
-                    public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-                        ResponseUtil.renderJson(httpServletResponse, R.error("未登录"));
-                    }
-                })
                 .accessDeniedHandler(new AccessDeniedHandler() {
                     @Override
                     public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
                         ResponseUtil.renderJson(httpServletResponse, R.error("权限不够"));
                     }
                 });
-//        JwtAuthenticationFilter jwtAuthenticationFilter=new JwtAuthenticationFilter();
-//        jwtAuthenticationFilter.setAuthenticationManager(this.authenticationManagerBean());
-//        http.addFilter(jwtAuthenticationFilter);
 
         JWTAuthorizationFilter jwtAuthorizationFilter=new JWTAuthorizationFilter();
         http.addFilterAt(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);

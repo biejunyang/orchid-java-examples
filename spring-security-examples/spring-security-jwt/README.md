@@ -48,7 +48,111 @@ Spring Security过滤器链中的最后一个过滤器，其作用是保护请�
 ## 4、Jwt鉴权实现
 
 ### Jwt权限认证过滤器JwtAuthorizationFilter
-校验用户请求中携带的Token,Token校验成功，则解析Token获取对应的用户认证信息Authentication对象，并放到安全上下文中，校验失败则返回错误码
+拦截所有需要认证的请求，校验用户请求中携带的Token,Token校验成功，则解析Token获取对应的用户认证信息Authentication对象，并放到安全上下文中，校验失败则返回错误码
+```java
+/**
+ * JWT鉴权过滤器
+ */
+public class JWTAuthorizationFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        if (request.getRequestURI().startsWith("/login")) {
+            doFilter(request, response, filterChain);
+        } else {
+            String tokenHeader = request.getHeader("Authorization");
+            if (ObjectUtil.isNotEmpty(tokenHeader)) {
+                if (tokenHeader.startsWith("Bearer ")) {
+                    String token = tokenHeader.substring(7);
+                    try {
+                        String username = JwtTokenUtil.parseSubject(token);
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                                new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        doFilter(request, response, filterChain);
+                        return;
+                    } catch (JwtTokenException e) {
+//                    e.printStackTrace();
+                        ResponseUtil.renderJson(response, R.error(e.getMessage()));
+                        return;
+                    }
+                } else {
+                    ResponseUtil.renderJson(response, R.error("invalid token", null));
+                }
+            } else {
+                ResponseUtil.renderJson(response, R.error("未登录"));
+            }
+        }
+    }
+
+}
+
+```
+
+````
+注意Token校验成功后,要生成用户已认证的Authentication信息,放入到SecurityContext中。
+Spring Security最后面的安全拦截器FilterSecurityInterceptor会从中获取认证对象进行权限控制、
+````
+
+### Spring Security过滤器链中添加该过滤器
+自定义的安全保护过滤器要添加在FilterSecurityInterceptor过滤器之前。
+
+JWT并没有在后台存储用户登录状态，而是存储在Token传输给客户端。所以可以关闭Session功能。
+```java
+    /**
+     * @param http
+     * @throws Exception
+     */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers("/login").permitAll()
+                .anyRequest().authenticated().and()
+            .formLogin().disable()
+            .sessionManagement().disable()
+            .csrf().disable()
+            .exceptionHandling()
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
+                        ResponseUtil.renderJson(httpServletResponse, R.error("权限不够"));
+                    }
+                });
+
+        JWTAuthorizationFilter jwtAuthorizationFilter=new JWTAuthorizationFilter();
+        http.addFilterAt(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+    
+```
+
+### 登录接口
+用户名密码认证，认证成功返回生成的Token信息
+```java
+    @PostMapping("/login")
+    public R login(@RequestBody Map<String, Object> userVo) throws JOSEException {
+        if(ObjectUtil.isEmpty(userVo.get("username"))){
+            return R.error("用户名不能为空!", null);
+        }
+        if(ObjectUtil.isEmpty(userVo.get("password"))){
+            return R.error("密码不能为空!", null);
+        }
+        UserDetails userDetails=userDetailsService.loadUserByUsername(userVo.get("username").toString());
+        if(userDetails==null){
+            return R.error("用户名不能存在", null);
+        }
+
+        if(!passwordEncoder.matches(userVo.get("password").toString(), userDetails.getPassword())){
+            return R.error("密码错误", null);
+        }
+        return R.success(JwtTokenUtil.createToken(userDetails.getUsername()));
+    }
+```
+
+````
+Spring Security默认的表单登录过程中使用的是UsernamePasswordAuthenticationFilter认证过滤器来完成登录认证的。
+JWT认证中也可以实现一个认证过滤器处理登录认证。
+````
 
 
 ```java  
