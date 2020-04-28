@@ -1,7 +1,41 @@
 # spring-securiy-from
 > 此 demo 主要演示了 Spring Boot 整合 Spring Securitiy 并使用 JWT Token进行安全认证管理。
 
-## 1、pom依赖添加
+## 1、JWT介绍
+### JWT(JSON WEB TOKEN)
+JWT是一种基于JSON数据传出的WEB开发标准。可以用做用户登录鉴权，存储用户的会话信息。
+
+### 组成
+JWT由三段文本组成：头部、负载、数字签名。三段文本通过.号拼接，如：
+````
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
+````
+
+头部(Header)：jwt的元数据，包含了jwt的类型和数字签名的加密算法
+负载(Payload)：实际需要传输的数据。JWT规范中定义标准的字段声明，如：iss、sub、aud等。
+数字签名(Signature)：确保Token的完整性，及识别Token的签发方。
+
+
+### 3、优缺点：
+优点：
+
+1、会话信息不需要保存在服务端，非常适合分布式微服务
+
+2、字包含：Token中包含了用户的相关信息，不需要在去数据库获取
+
+3、简介快速、传输方便，可以添加到请求头，或参数中发送
+
+缺点：
+
+1、数据安全问题：jwt负载中的数据是经过Base64编码后的文本，是可以逆向解码的。所以token中不能存在民反信息
+
+2、JWT令牌一旦签署，会一直有效直到Token的有效期。因为服务并没有存在会话状态信息。
+
+3、数量问题，如果JWT中负载数据过多，会导致JWT的长度过长
+
+
+
+## 2、pom依赖添加
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -19,7 +53,7 @@
 </dependency>
 ```
 
-## 2、Spring Security 权限控制原理
+## 3、Spring Security 权限控制原理
 
 ### 1、SecurityContextPersistenceFilter(安全上下文持久化过滤器):
 当前请求的安全上的准备和获取。请求开始时从配置好的 SecurityContextRepository中获取 SecurityContext，然后把它设置给 SecurityContextHolder。在请求完成后将 SecurityContextHolder 持有的 SecurityContext 再保存到配置好的 SecurityContextRepository，同时清除 securityContextHolder 所持有的 SecurityContext；
@@ -34,7 +68,7 @@ Spring Security过滤器链中的最后一个过滤器，其作用是保护请�
 
 
  
-## 3、Spring Security JWT 实现原理
+## 4、Spring Security JWT 实现原理
 ````
 1、JWT鉴权中用户的认证信息Authentication对象不是存在在Session对象中，而是使用JWT Token来承载，发送给客户端。后端并不需要存储用户状态，客户端访问全资源时通过携带授权的JWT Token来访问资源。
 
@@ -45,7 +79,7 @@ Spring Security过滤器链中的最后一个过滤器，其作用是保护请�
 ````
 
 
-## 4、Jwt鉴权实现
+## 5、Jwt鉴权实现
 
 ### Jwt权限认证过滤器JwtAuthorizationFilter
 拦截所有需要认证的请求，校验用户请求中携带的Token,Token校验成功，则解析Token获取对应的用户认证信息Authentication对象，并放到安全上下文中，校验失败则返回错误码
@@ -155,39 +189,8 @@ JWT认证中也可以实现一个认证过滤器处理登录认证。
 ````
 
 
-## JWT介绍
-### 1、JWT(JSON WEB TOKEN)
-JWT是一种基于JSON数据传出的WEB开发标准
 
-### 2、组成
-JWT由三段文本组成：头部、负载、数字签名。三段文本通过.号拼接，如：
-````
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
-````
-头部(Header)：jwt的元数据，包含了jwt的类型和数字签名的加密算法
-负载(Payload)：实际需要传输的数据。JWT规范中定义标准的字段声明，如：iss、sub、aud等。
-数字签名(Signature)：确保Token的完整性，及识别Token的签发方。
-
-
-### 3、优缺点：
-优点：
-
-1、会话信息不需要保存在服务端，非常适合分布式微服务
-
-2、字包含：Token中包含了用户的相关信息，不需要在去数据库获取
-
-3、简介快速、传输方便，可以添加到请求头，或参数中发送
-
-缺点：
-
-1、数据安全问题：jwt负载中的数据是经过Base64编码后的文本，是可以逆向解码的。所以token中不能存在民反信息
-
-2、JWT令牌一旦签署，会一直有效直到Token的有效期。因为服务并没有存在会话状态信息。
-
-3、数量问题，如果JWT中负载数据过多，会导致JWT的长度过长
-
-
-##  参考
+## 6、参考
 JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
 
 nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
