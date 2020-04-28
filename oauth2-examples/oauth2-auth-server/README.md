@@ -1,5 +1,6 @@
-# spring-securiy-from
-> 此 demo 主要演示了 Spring Boot 整合 Spring Securitiy 并使用 JWT Token进行安全认证管理。
+# oauth2-auth-server
+> 此 demo 主要演示了 Spring Security OAuth2.0中认证服务器的实现。支持四种授权模式：授权码模式、客户端模式、密码模式、隐士模式。
+
 
 ## 1、JWT介绍
 ### JWT(JSON WEB TOKEN)
