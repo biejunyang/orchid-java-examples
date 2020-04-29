@@ -29,7 +29,7 @@ import java.util.UUID;
 /**
  * OAuth2 Token Manage Config
  */
-@Configuration
+//@Configuration
 public class TokenConfig {
 
 

@@ -4,9 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.orchid</groupId>
+    <parent>
+        <groupId>com.orchid</groupId>
+        <artifactId>orchid</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <artifactId>orchid-java-examples</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -26,17 +29,14 @@
         <dependency>
             <groupId>com.github.dozermapper</groupId>
             <artifactId>dozer-spring-boot-starter</artifactId>
-            <version>6.5.0</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>4.5.16</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>
-            <version>4.5.16</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -46,66 +46,6 @@
         </dependency>
     </dependencies>
     <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>2.1.6.RELEASE</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
-                <version>0.9.1</version>
-            </dependency>
-
-            <!-- mybatis-starter：mybatis + mybatis-spring + hikari（default） -->
-            <dependency>
-                <groupId>org.mybatis.spring.boot</groupId>
-                <artifactId>mybatis-spring-boot-starter</artifactId>
-                <version>2.1.1</version>
-            </dependency>
-            <!-- mysql -->
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.18</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>3.3.1.tmp</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger2</artifactId>
-                <version>2.9.2</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.swagger</groupId>
-                        <artifactId>swagger-models</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-models</artifactId>
-                <version>1.5.22</version>
-            </dependency>
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger-ui</artifactId>
-                <version>2.9.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba</groupId>
-                <artifactId>fastjson</artifactId>
-                <version>1.2.59</version>
-            </dependency>
-        </dependencies>
     </dependencyManagement>
     <build>
         <plugins>
