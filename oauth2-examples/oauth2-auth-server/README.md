@@ -660,24 +660,7 @@ class JwkSetEndpoint {
 }
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-### 
-
-
-想使用jwt令牌，需要在授权服务中配置JwtTokenStore。之前说了，jwt将一些信息数据编码后存放在令牌,那么其实在传输的时候是很不安全的，所以Spring OAuth2提供了JwtAccessTokenConverter来怼令牌进行编码和解码。适用JwtAccessTokenConverter可以自定义秘签（SigningKey）。SigningKey用处就是在授权认证服务器生成进行签名编码，在资源获取服务器根据SigningKey解码校验。
-
-
-## 6、参考
+## 8、参考
 JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
 
 nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
