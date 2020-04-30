@@ -30,7 +30,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
             .authorizeRequests()
-                .mvcMatchers("/.well-known/jwks.json").permitAll()
+                .mvcMatchers("/.well-known/jwks.json", "/userInfo").permitAll()
                 .anyRequest().authenticated().and()
             .formLogin().permitAll().and()
             .logout().and()

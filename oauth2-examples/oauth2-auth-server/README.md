@@ -31,7 +31,7 @@ spring-security-oauth2-autoconfigure依赖是spring security oauth2对spring boo
 但是该依赖并不在springboot的依赖管理（spring-boot-dependencies）中；而是在spring cloud的依赖管理(spring-cloud-dependencies)中。
 ````
 
-## Authorization Server本身Web安全配置
+## 3、Authorization Server本身Web安全配置
 授权码模式中需要用户登录认证后，给第三方应用授权，所以认证服务器本身需要实现用户安全认证。
 
 ```java
@@ -75,9 +75,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 ```
 
 
-## Authorization Server授权服务器配置
+## 4、Authorization Server授权服务器配置
 
-### 1、@EnableAuthorizationServer注解
+### 4.1、@EnableAuthorizationServer注解
 使用注解@EnableAuthorizationServer，开始OAuth2认证服务器自动配置。自动导入了两个配置：
 
 1、AuthorizationServerEndpointsConfiguration：OAuth2.0认证服务相关端点服务配置类。开启认证相关的端点服务，如：
@@ -96,7 +96,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 ````
 
 
-### 2、自定义认证服务配置类
+### 4.2、自定义认证服务配置类
 @EnableAuthorizationServer开启了OAuth2.0认证服务的默认配置，但是我们需要顶一个配置类继承AuthorizationServerConfigurerAdapter，进行自定的认证服务配置，如默认配置：
 
 ```java
@@ -127,7 +127,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 ````
 
 
-### 3、ClientDetailsServiceConfigurer客户端认证配置
+### 4.3、ClientDetailsServiceConfigurer客户端认证配置
 OAuth2.0中允许对第三方客户端进行授权。但是能够授权的第三方客户端需要经过认证。
 
 ```java
@@ -172,7 +172,7 @@ ClientDetailsServiceConfigurer：client客户端的信息配置，包括：clien
 3、自定义ClientDetailsService实现类：自定义客户端加载实现
 ````
 
-### 4、AuthorizationServerEndpointsConfigurer授权端点服务配置
+### 4.4、AuthorizationServerEndpointsConfigurer授权端点服务配置
 授权服务端点信息配置，默认支持除了密码外的所有授权方式。可以对授权服务的相关参数进行配置，如：
 
 ````
@@ -191,7 +191,7 @@ ClientDetailsServiceConfigurer：client客户端的信息配置，包括：clien
 
 ````
 
-### 5、AuthorizationServerSecurityConfigurer授权端点安全约束设置
+### 4.5、AuthorizationServerSecurityConfigurer授权端点安全约束设置
 
 授权服务端点默认的安全约束规则：
 ````
@@ -227,7 +227,7 @@ ClientCredentialsTokenEnd po intFilter来保护，如果没有支持allowFormAut
 
 ```
 
-### 6、认证服务器完整配置
+### 4.6、认证服务器完整配置
 ```java
 
 @EnableAuthorizationServer
@@ -308,10 +308,10 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 令牌存储在内存在，在单服务应用上体现良好，但是不适合认证服务器集群部署，并且并不适用与高并发，并且服务重启后Token会清空。
 
 
-## OAuth2.0 授权模式
+## 5、OAuth2.0 授权模式
 
 
-### 授权码模式(authorization_code)：
+### 5.1、授权码模式(authorization_code)：
 功能最完整、流程最严密的授权模式。它的特点就是通过客户端的后台服务器，与"服务提供商"的认证服务器进行互动；通过资源所有这用户登录，并且同意授权后，才能获取令牌。首先是获取授权码，必须经过用户登录，并授权；然后在通过授权码获取令牌（Token）。
 
 
@@ -344,7 +344,7 @@ POST请求：POST http://localhost:8080/oauth/token?grant_type=authorization_cod
 ````
 
 
-### 客户端模式(client_credentials)：
+### 5.2、客户端模式(client_credentials)：
 客户端直接通过客户端凭证获取令牌;不要用户登录认证，
 
 请求参数：
@@ -369,7 +369,7 @@ POST请求：http://localhost:8080/oauth/token?grant_type=client_credentials&cli
 因为这种模式可以轻易地通过refresh token来不断获取access token，并且也可以使用动态的注册流程，在集成服务时自动执行所有流
 ````
 
-### 密码模式(password):
+### 5.3、密码模式(password):
 直接在客户端使用用户的账户密码来获取令牌，因为是直接在客户端输入用户名和密码，并不安全，所以一般只是在内部客户端系统中使用。
 
 请求参数：
@@ -393,7 +393,7 @@ POST请求：http://localhost:8080/oauth/token?grant_type=password&username=admi
 ````
 
 
-### 隐式模式(implict):
+### 5.4、隐式模式(implict):
 
 授权码模式的简化版本，不需要先获取授权码，用户登录授权后直接发送令牌；重定向指定地址。当使用隐式模式时，第三方应用始终需要通过重定向URI来注册，这样能确保不会将access token传给不需要验证的客户端。
 
@@ -413,7 +413,7 @@ GET请求：http://localhost:8080/oauth/authorize?client_id=client&redirect_uri=
 ````
 
 
-### 刷新令牌(refresh_token):
+### 5.5、刷新令牌(refresh_token):
 
 请求参数：
 ````
@@ -430,13 +430,15 @@ POST请求：http://localhost:8080/oauth/token?grant_type=refresh_token&client_i
 ````
 
 
-## TokenStore令牌持久化管理
+## 6、TokenStore令牌持久化管理
 认证服务器的主要作用是颁发令牌，和校验令牌，所以生成令牌后需要存储起来，便于后面进行令牌的校验。Spring Security OAuth2实现中默认使用InMemoryTokenStore将令牌存储在内存中。
 
 但是并不是使用集群部署的应用，以及高并发的情况，除此外还有几种TokenStore实现：
 
 ````
-InMemoryTokenStore：这个是OAuth2默认采用的实现方式。在单服务上可以体现出很好特效（即并发量不大，并且它在失败的时候不会进行备份），大多项目都可以采用此方法。毕竟存在内存，而不是磁盘中，调试简易。
+InMemoryTokenStore：这个是OAuth2默认采用的实现方式。在单服务上可以体现出很好特效（即并发量不大，并且它在失败的时候不会进行备份），大多项目都可以采用此方法。
+毕竟存在内存，而不是磁盘中，调试简易。使用ConcurrentHashMap存储Token数据信息，线程安全支持多并发。
+
 
 JdbcTokenStore：这个是基于JDBC的实现，令牌（Access Token）会保存到数据库。这个方式，可以在多个服务之间实现令牌共享。
 
@@ -447,6 +449,55 @@ JwtTokenStore：jwt全称 JSON Web Token。这个实现方式不用管如何进�
     
 RedisTokenStore：令牌存储Redis缓存平台。
 ````
+
+
+### 6.1、RedisTokenStore(Redis令牌管理)
+使用Redis来存储令牌、Reids的高性能、高并发处理特点，用来存储令牌既适合分布式应用，又能处理高并发的情况。
+```java
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+            .authenticationManager(authenticationManager)
+            .tokenStore(tokenStore());
+    }
+    
+    @Bean
+    public TokenStore tokenStore(){
+        return new RedisTokenStore(redisConnectionFactory);
+    }
+
+```
+
+### 6.2、JwtTokenStore(JWT令牌管理)
+使用JWT来存储令牌时，实际并不会在认证服务器后台内存或本地持久化生成的令牌。而是直接把认证用户的相关信息已json串的形式编码到JWT令牌中，然后返回给客户端。
+
+资源服务器校验上只需要在本地校验JWT令牌的有效性，不需要想认证服务器请求校验令牌。JWT令牌中已然包括了用户认证的相关信息。
+
+JWT将用户认证信息直接保存在Token中并不安全，所以Spring OAuth2提供了JwtAccessTokenConverter来怼令牌进行编码和解码。
+
+认证服务器生成JWT令牌，使用秘钥进行数字签名、资源服务器使用相同对应的秘钥进行签名验证，验证成功则令牌和有效的，并从中可以解析出认证用信息。
+
+JWT数字签名的作用：
+````
+签名方身份识别：只要使用认证服务器提供的秘钥进行令牌解密、则令牌一定是认证服务器颁发的
+Token的完整性校验：保证Token中的用户信息，没有被串改
+````
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 总之：
 
 令牌存储在内存中是使用方便，但应用中使用良好，不适合高并发，集群部署
@@ -456,6 +507,19 @@ RedisTokenStore：令牌存储Redis缓存平台。
 令牌存储在JWT中时，效率高，后台不需要存储Token，非常适合分布式服务，但是令牌无法撤销
 
 令牌存储在Redis中是，适合分布式应该，并且redis的高并发，高性能特点，适合高并发情况
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### 

@@ -9,7 +9,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
+import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.TokenStore;
 
 @EnableAuthorizationServer
 @Configuration
@@ -17,10 +18,16 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
 
     @Autowired
-    private RedisConnectionFactory redisConnectionFactory;
+    private AuthenticationManager authenticationManager;
+
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    private TokenStore tokenStore;
+
+
+    @Autowired
+    private AccessTokenConverter accessTokenConverter;
+
     /**
      * 客户端设置
      * @param clients
@@ -73,14 +80,11 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
      */
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-//        super.configure(endpoints);
-        endpoints
-            .authenticationManager(authenticationManager)
-//            .tokenStore(new RedisTokenStore(redisConnectionFactory))
+
+        endpoints.authenticationManager(authenticationManager) //指定用户认证管理器
+                .tokenStore(tokenStore)
+                .accessTokenConverter(accessTokenConverter)
         ;
-//        endpoints.authenticationManager(authenticationManager) //指定用户认证管理器
-//                .tokenStore(tokenStore)
-//                .accessTokenConverter(accessTokenConverter);
 
         // 配置TokenServices参数
 //        DefaultTokenServices tokenServices = (DefaultTokenServices) endpoints.getDefaultAuthorizationServerTokenServices();
@@ -107,6 +111,10 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .checkTokenAccess("isAuthenticated()")//校验令牌端点需要授权过
                 .allowFormAuthenticationForClients();
     }
+
+
+
+
 
 
 }
