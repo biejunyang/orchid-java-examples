@@ -16,7 +16,7 @@
         <module>oauth2-auth-server</module>
         <module>oauth2-resource-server</module>
         <!--<module>oauth2-login</module>-->
-        <!--<module>oauth2-resource-server2</module>-->
+        <module>oauth2-resource-server2</module>
         <!--<module>oauth2-client</module>-->
         <!--<module>oauth2-sso-client1</module>-->
         <!--<module>oauth2-sso-client2</module>-->

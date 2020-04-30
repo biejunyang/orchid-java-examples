@@ -1,5 +1,8 @@
 # oauth2-resource-server
-> 此 demo 主要演示了 Spring Security OAuth2.0中Resource Server资源服务器的实现。
+> 此 demo 主要演示了 Spring Security 5.x中对中Resource Server资源服务器的支持。
+
+
+
 
 ## 1、Resource Server介绍
 资源服务器的作用就是保护资源，验证令牌是否有效，有效则允许访问受保护的资源
@@ -227,11 +230,4 @@ RemoteTokenServices (远程授权服务器校验)：通过 HTTP 请求来解码�
 
 
 ## 6、参考
-JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
-
-nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
-
-JWT说明：http://blog.leapoahead.com/2015/09/06/understanding-jwt/
-
-JWT官网：https://jwt.io/
-
+https://blog.csdn.net/hadues/article/details/89340875
