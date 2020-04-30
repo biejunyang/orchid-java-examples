@@ -231,7 +231,9 @@ MD5算法
 https://www.jianshu.com/p/b078282653b3
 https://www.cnblogs.com/jfzhu/p/4020928.html
 https://tool.oschina.net/encrypt?type=2
- JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
- JWT说明：http://blog.leapoahead.com/2015/09/06/understanding-jwt/
- JWT官网：https://jwt.io/
- nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
+JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
+JWT说明：http://blog.leapoahead.com/2015/09/06/understanding-jwt/
+JWT官网：https://jwt.io/
+nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
+
+https://www.cnblogs.com/AloneSword/p/3326750.html

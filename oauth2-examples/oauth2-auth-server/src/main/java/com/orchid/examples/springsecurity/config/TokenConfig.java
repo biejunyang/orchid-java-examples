@@ -12,6 +12,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.jwt.crypto.sign.MacSigner;
+import org.springframework.security.jwt.crypto.sign.Signer;
 import org.springframework.security.oauth2.provider.endpoint.FrameworkEndpoint;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.DefaultUserAuthenticationConverter;
@@ -74,13 +75,13 @@ public class TokenConfig {
     public JwtAccessTokenConverter accessTokenConverter(KeyPair keyPair) {
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
 
-//        converter.setKeyPair(keyPair);
+        converter.setKeyPair(keyPair);
 
         //对称加密签名
-        converter.setSigningKey("123456");
+//        converter.setSigningKey("123456");
 //
         DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
-//        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
         converter.setAccessTokenConverter(accessTokenConverter);
 
         return converter;

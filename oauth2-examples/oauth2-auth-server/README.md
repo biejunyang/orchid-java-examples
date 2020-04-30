@@ -485,20 +485,117 @@ Token的完整性校验：保证Token中的用户信息，没有被串改
 
 
 
+JwtAccessTokenConverter对象实现令牌的编码和解码。Spring Security OAuth2实现中默认支持两种加密算法：
+
+对称加密算法(HMAC加密算法)：JWT加密可解密使用使用相同秘钥如：
+```java
+    @Bean
+    public JwtAccessTokenConverter accessTokenConverter() {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+
+        //对称加密签名
+        converter.setSigningKey("123456");
+
+        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
+        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+        converter.setAccessTokenConverter(accessTokenConverter);
+
+        return converter;
+    }
+
+```
+
+
+非对称加密算法，默认是RSA非对称加密算法，使用私钥加密，解析时使用公钥解密，如：
+
+```java
+    /**
+     * Access Token Converter Bean
+     * @param keyPair
+     * @return
+     */
+    @Bean
+    public JwtAccessTokenConverter accessTokenConverter(KeyPair keyPair) {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+
+//      非对称加密算法
+        converter.setKeyPair(keyPair);
+
+        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
+        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+        converter.setAccessTokenConverter(accessTokenConverter);
+
+        return converter;
+    }
 
 
 
+    /**
+     * JWT Token Signed Secet
+     * An Authorization Server will more typically have a key rotation strategy, and the keys will not
+     * be hard-coded into the application code.
+     *
+     * For simplicity, though, this sample doesn't demonstrate key rotation.
+     */
+    @Bean
+    public KeyPair keyPair() {
+        try {
+            String privateExponent = "3851612021791312596791631935569878540203393691253311342052463788814433805390794604753109719790052408607029530149004451377846406736413270923596916756321977922303381344613407820854322190592787335193581632323728135479679928871596911841005827348430783250026013354350760878678723915119966019947072651782000702927096735228356171563532131162414366310012554312756036441054404004920678199077822575051043273088621405687950081861819700809912238863867947415641838115425624808671834312114785499017269379478439158796130804789241476050832773822038351367878951389438751088021113551495469440016698505614123035099067172660197922333993";
+            String modulus = "18044398961479537755088511127417480155072543594514852056908450877656126120801808993616738273349107491806340290040410660515399239279742407357192875363433659810851147557504389760192273458065587503508596714389889971758652047927503525007076910925306186421971180013159326306810174367375596043267660331677530921991343349336096643043840224352451615452251387611820750171352353189973315443889352557807329336576421211370350554195530374360110583327093711721857129170040527236951522127488980970085401773781530555922385755722534685479501240842392531455355164896023070459024737908929308707435474197069199421373363801477026083786683";
+            String exponent = "65537";
+
+            RSAPublicKeySpec publicSpec = new RSAPublicKeySpec(new BigInteger(modulus), new BigInteger(exponent));
+            RSAPrivateKeySpec privateSpec = new RSAPrivateKeySpec(new BigInteger(modulus), new BigInteger(privateExponent));
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            return new KeyPair(factory.generatePublic(publicSpec), factory.generatePrivate(privateSpec));
+        } catch ( Exception e ) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+```
 
 
 
+DefaultUserAuthenticationConverter对象：用来是自定义JWT令牌中包含的用户信息，如：
+```java
+class SubjectAttributeUserTokenConverter extends DefaultUserAuthenticationConverter {
+    @Override
+    public Map<String, ?> convertUserAuthentication(Authentication authentication) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("sub", authentication.getName());
+        if (authentication.getAuthorities() != null && !authentication.getAuthorities().isEmpty()) {
+            response.put(AUTHORITIES, AuthorityUtils.authorityListToSet(authentication.getAuthorities()));
+        }
+        return response;
+    }
+}
+```
 
 
+构建并设置JwtTokenStore,
+
+```java
+
+    @Bean
+    public TokenStore tokenStore(JwtAccessTokenConverter jwtAccessTokenConverter) {
+        return new JwtTokenStore(jwtAccessTokenConverter);
+    }
+    
+    
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+
+        endpoints.authenticationManager(authenticationManager) //指定用户认证管理器
+                .tokenStore(tokenStore)
+                .accessTokenConverter(accessTokenConverter)
+        ;
+    }
+    
+```
 
 
-
-
-
-总之：
+### 总之：
 
 令牌存储在内存中是使用方便，但应用中使用良好，不适合高并发，集群部署
 
@@ -510,6 +607,58 @@ Token的完整性校验：保证Token中的用户信息，没有被串改
 
 
 
+
+## 7、认证服务器对外的端点服务
+    
+/oauth/authorize：获取授权码端点，需要用户登录认证
+
+/oauth/token：获取令牌端点
+
+/oauth/check_token:令牌校验端点
+
+其他可以实现服务端点：
+
+/userInfo：获取token对象用户信息
+```java
+    @Autowired
+    private TokenStore tokenStore;
+
+
+    /**
+     * 获取Token对应的信息
+     * @param token
+     * @return
+     */
+    @GetMapping("/userInfo")
+    @ResponseBody
+    public Object userInfo(String token){
+        if(ObjectUtil.isNotEmpty(token)){
+            return tokenStore.readAuthentication(token);
+        }
+        return null;
+    }
+```
+
+/.well-known/jwks.json：JWT令牌实现中使用非对称加密算法时，用来公布公钥信息
+```java
+@FrameworkEndpoint
+class JwkSetEndpoint {
+    KeyPair keyPair;
+
+    JwkSetEndpoint(KeyPair keyPair) {
+        this.keyPair = keyPair;
+    }
+
+    @GetMapping("/.well-known/jwks.json")
+    @ResponseBody
+    public Map<String, Object> getKey() {
+        RSAPublicKey publicKey = (RSAPublicKey) this.keyPair.getPublic();
+        RSAKey key = new RSAKey.Builder(publicKey) .keyUse(KeyUse.SIGNATURE)
+                .keyID(UUID.randomUUID().toString()).build();
+        return new JWKSet(key).toJSONObject();
+    }
+}
+```
 
 
 
