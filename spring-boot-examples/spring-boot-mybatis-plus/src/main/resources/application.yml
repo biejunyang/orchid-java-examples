@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: orchid-supply
+  datasource:
+    url: jdbc:mysql://10.225.12.98:3306/test?useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&useSSL=false
+    username: root
+    password: root
+
+mybatis-plus:
+  configuration:
+    auto-mapping-behavior: FULL
+    auto-mapping-unknown-column-behavior: WARNING
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+      table-prefix:
+  log: true
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.orchid.supply.entity
+
+orchid:
+  auth:
+    jwt:
+      enable: true
