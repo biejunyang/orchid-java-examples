@@ -24,6 +24,7 @@
         <module>java-security-example</module>
         <module>redis-example</module>
         <module>oauth2-examples</module>
+        <module>java8</module>
     </modules>
     <dependencies>
         <dependency>
