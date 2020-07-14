@@ -25,6 +25,7 @@
         <module>redis-example</module>
         <module>oauth2-examples</module>
         <module>java8</module>
+        <module>weixin-examples</module>
     </modules>
     <dependencies>
         <dependency>

@@ -1,0 +1,22 @@
+server:
+  port: 80
+spring:
+  #  spring boot默认静态文件处理;静态文件请求时必须加路径前缀
+  resources:
+    static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+
+  thymeleaf:
+    prefix: classpath:/templates/ #模板文件位置
+    suffix: .html #模板文件后缀
+    cache: false #是否启用缓存
+    encoding: utf-8 #编码
+    mode: HTML #严格的HTML语法校验
+    servlet:
+      content-type: text/html
+
+wx:
+  appId: wxb4492b6697a78da9
+  appsecret: bf1a8c049b5b0d0b553e71f91b547a84
+  token: 7881060
+
+
