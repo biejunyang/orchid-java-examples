@@ -32,8 +32,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
                 .mvcMatchers("/.well-known/jwks.json", "/userInfo").permitAll()
                 .anyRequest().authenticated().and()
-            .formLogin().permitAll().and()
+            .formLogin().permitAll().and().httpBasic().and()
             .logout().and()
+//            .oauth2ResourceServer().jwt().and().and()
             .csrf().ignoringRequestMatchers(request -> "/introspect".equals(request.getRequestURI()));
     }
 

@@ -1,4 +1,4 @@
-package com.orchid.supply.dao;
+package com.orchid.wx.mp.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.orchid.supply.entity.Supplier;

@@ -1,4 +1,4 @@
-package com.orchid.supply;
+package com.orchid.wx.mp;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;

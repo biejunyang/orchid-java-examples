@@ -40,7 +40,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         clients
                 .inMemory().withClient("client").secret("{noop}client")
                 .authorizedGrantTypes("client_credentials", "authorization_code", "refresh_token", "password", "implicit")
-                .scopes("read","write")
+                .scopes("read","write").autoApprove(true)
                 .redirectUris("http://baidu.com", "http://localhost:8083/client/login", "http://localhost:8083/client/hello","http://localhost:8084/client2/login")
                 .accessTokenValiditySeconds(3600).and()
 
