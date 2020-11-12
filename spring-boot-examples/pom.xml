@@ -23,6 +23,7 @@
         <module>spring-boot-rabbitmq-consumer</module>
         <module>spring-boot-template</module>
         <module>spring-boot-mybatis-plus</module>
+        <module>apollo-config-example</module>
     </modules>
 
 
