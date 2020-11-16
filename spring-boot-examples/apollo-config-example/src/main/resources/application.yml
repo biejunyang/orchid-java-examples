@@ -1,0 +1,12 @@
+
+app:
+  id: apollo-config-example
+apollo:
+  meta: http://10.225.12.115:1111
+  bootstrap:
+    enabled: true
+    namespaces: application,testprivatenamespace,C15AG.publicnamespace
+
+mytest: axxx
+privatekey1: xxxxx
+publickey1: qcxcxcx

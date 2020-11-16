@@ -1,5 +1,5 @@
 server:
-  port:
+  port: 8080
 
 spring:
 #  数据源信息
@@ -8,8 +8,25 @@ spring:
 #    username: root
 #    password: root
 #    driver-class-name: com.mysql.jdbc.Driver
-  security:
-#    配置默认用户信息
-    user:
-      name: admin
-      password: admin
+  redis:
+    host:  10.225.12.96
+    port: 6379
+    password: bgiredis
+    #    数据库模式指定，0~15一共16个模式，默认选择0
+    database: 10
+    #    spring boot2中默认使用lettuce作为redis客户端
+    lettuce:
+      pool:
+        #        连接池最大连接池
+        max-active: 8
+        #        连接池最大阻塞时间，单位毫秒，负数表示没有限制
+        max-wait: -1
+        #        连接池中最大空闲连接数量
+        max-idle: 8
+        #        连接池中最小空闲连接数量
+        min-idle: 0
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          jwk-set-uri: http://localhost:8080/.well-known/jwks.json
