@@ -20,6 +20,7 @@
         <module>jwt-examples</module>
         <module>java-security-example</module>
         <module>redis-example</module>
+        <module>jsoup-example</module>
     </modules>
     <dependencies>
         <dependency>
