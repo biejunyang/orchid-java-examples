@@ -27,6 +27,7 @@
         <module>java8</module>
         <module>weixin-examples</module>
         <module>jsoup-example</module>
+        <module>springcloud-examples</module>
     </modules>
     <dependencies>
         <dependency>
