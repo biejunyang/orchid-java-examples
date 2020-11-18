@@ -66,6 +66,10 @@ eureka server接收到客户端实例最后一个发出的心跳后，需要等�
 
 注意，此时间的设置需要大于客户端发出心跳的时间间隔设置
 
+````
+eureka.server.eviction-interval-timer-in-ms=60000
+````
+eureka server会定期检查客户端实例是否有效，并清理无效节点的时间,默认60*1000毫秒,即60秒。
 
 
 
@@ -76,16 +80,21 @@ eureka server接收到客户端实例最后一个发出的心跳后，需要等�
 @EnableEurekaClient包含了@EnableDiscoverClient的功能。Spring Cloud中服务发现组件有很多，组zookeeper, Consule等，@EnableDiscoverClient是一个抽象注解支持其他的服务发现组件，@EnableEurekaClient值针对eureka组件。
 
 
-
 2、application.yml配置文件配置
 
 ````
+spring.application.name=eureka-client
+
+server.port=8080
+
 # 注册本机服务的eureka server
 eureka.client.register-with-eureka=true
 
 # 抓取eureka server上的服务实例信息
 eureka.client.fetch-registry=true
 
+# eureka客户端间隔多久去抓取一次eureka server上的注册信息，默认30
+eureka.client.registry-fetch-interval-seconds=30
 
 # 设置Eureka server地址，server集群环境时，可以设置多个地址，逗号分隔
 eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
@@ -93,63 +102,148 @@ eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
 # 服务注册时将自己的ip地址注册到eureka注册中心，否则默认将本机的hostname注册到eureka server
 eureka.instance.prefer-ip-address=true
 
+# 使用Ip地址注册时，直接指定注册的ip地址，否则程序会动态获取本机ip
+eureka.instance.ip-address=127.0.0.1
+
+# 服务注册时的唯一标识,控制台界面上默认显示的名称
+eureka.instance.instance-id=${eureka.instance.ip-address}.${spring.application.name}.${server.port}
+
+# eureka客户端需要多长时间发送心跳给eureka服务器，表明他仍然或者，默认30秒
+eureka.instance.lease-renewal-interval-in-seconds=30
 
 ````
 
+注意：Eureka Server本身也默认可以作为一个Eureka Client实例，在eureka集群部署中，将做一个eureka client实例向其他server节点注册本身。
+
+所以eureka客户端的配置也适用于eureka服务端
 
 
+## 5、eureka server端服务检查
+eureka客户端实例注册到eureka服务端上面后，服务端需要定期检查客户端服务实例的状态
 
+默认情况下客户端会每个30秒发送心跳给服务器，告知服务端该实例仍然是可用的，使用配置```eureka.instance.lease-renewal-interval-in-seconds=30```可以修改间隔时间
 
+eureka服务器也会定期检查客户端实例的状态，当发现某个实例距离上一次接收到心跳后的一定时间内没有在收到该节点的心跳，Eureka Server将会从服务注册表中把这个服务节点移除。
 
+eureka服务端定期检查客户端节点的时间间隔设置默认为60秒，通过```eureka.server.eviction-interval-timer-in-ms=60000```配置设置，单位毫秒
 
+eureka服务器在接受到实力的最后一次发出的心跳后，需要等待多长时间可以将此实力作为无效节点(默认90秒)，可以通过配置```eureka.instance.lease-expiration-duration-in-seconds=90```修改时间。
 
-## 4、配置的使用
+## 6、eureka server自我保护模式
+默认情况下（90s）内eureka server 没有收到注册服务发送的心跳时，会注销该实例。但是有种情况是，在网络故障的情况下，无法与eureka server通信导致不能发送心跳，此时服务本身是可用的，这种情况则不能注销实例。
 
-### 4.1、@Value注解注入
+默认情况下Eureka的”自我保护模式“可以避免这种问题，当在短时间内，丢失过多客户端时（可能是王网络故障），节点则进入自我保护模式，会保护注册表中的信息，不会注册服务。当网络故障消除后，则退出自我保护模式。
 
+关闭自我保护模式：````eureka.server.enable-self-preservation=false````
+
+## 7、eureka client实例健康自检
+默认情况下，eureka客户端每隔30秒会发送一次心跳给eureka服务器，告知eurek服务器，它任仍然是存去的。
+
+但是实际情况中，eureka表面上可以正常发送心跳给eureka服务器，但实际上是不可用的，比如服务示例需要访问的数据库无法访问，或者需要访问的第三方服务失效，这些情况下服务实例应不能被其他调用者或者客户端获取到，所以需要告知eureka服务器自身的状态。
+
+eureka实例通过实现健康自检，来更正本身的可用状态，并通过发送心跳告知服务器其本身的状态。
 ```
-    @Value("${privatekey1:a}")
-    private String privatekey1;
+eureka实例的健康自检分两步：
+    1、整合actuator功能木块，实现健康检查器HealthIndicator，根据检查结果设置应用的状态
+    2、实现健康检查处理器，eureka的功能，将actuator检查结果和eureka实例状态进行关联设置。
 ```
 
-### 4.2、@ConfigurationProperties注解注入
-````java
-@Data
+
+## 8、Eureka API使用
+### 8.1、eureka服务端事件监听
+
+```java
 @Component
-@ConfigurationProperties(prefix = "")
-public class TestConfigProperties {
+public class EurekaStateChangeListener {
 
-    private String mytest;
+    @EventListener
+    public void listen(EurekaInstanceCanceledEvent event) {
+        //服务下线事件
+        log.info("服务:{}|{}挂了",event.getAppName(),event.getServerId());
+    }
 
-    private String privatekey1;
+    @EventListener
+    public void listen(EurekaInstanceRegisteredEvent event) {
+        //服务注册事件
+        log.info("服务:{}|{}注册成功了",event.getInstanceInfo().getAppName(),event.getInstanceInfo().getIPAddr());
+    }
 
-    private String publickey1;
-    
+    @EventListener
+    public void listen(EurekaInstanceRenewedEvent event) {
+        //服务续约事件
+        log.info("心跳检测:{}|{}",event.getInstanceInfo().getAppName(),event.getInstanceInfo().getIPAddr());
+    }
+
+    @EventListener
+    public void listen(EurekaRegistryAvailableEvent event) {
+       //注册中心启动事件
+        log.info("EurekaRegistryAvailableEvent");
+    }
+
+    @EventListener
+    public void listen(EurekaServerStartedEvent event) {
+        //Server启动
+        log.info("EurekaServerStartedEvent");
+    }
 }
-````
 
+```
 
-注意：@ConfigurationProperties注解注入的配置，当配置更新后默认不会自动更新。
+### 8.2 eureka服务器上注册服务实例查询
+1、通Spring cloud的DiscoveryClient类实例(直接注入)
 
-如果需要在Apollo配置变化时自动更新注入的值，需要配合使用EnvironmentChangeEvent或RefreshScope。
-
-实现:
-
+2、通过Eureka的EurekaClient类实例获取
 ````java
-
-@ApolloConfigChangeListener(value = {ConfigConsts.NAMESPACE_APPLICATION, "TEST1.apollo", "application.yaml"},
-      interestedKeyPrefixes = {"redis.cache."})
-  public void onChange(ConfigChangeEvent changeEvent) {
-    logger.info("before refresh {}", sampleRedisConfig.toString());
-    refreshScope.refresh("sampleRedisConfig");
-    logger.info("after refresh {}", sampleRedisConfig.toString());
-  }
+    @GetMapping("/router")
+    public void router(){
+        List<ServiceInstance> ins=getServiceInstances();
+        for(ServiceInstance service: ins){
+            EurekaDiscoveryClient.EurekaServiceInstance esi=(EurekaDiscoveryClient.EurekaServiceInstance)service;
+            InstanceInfo info=esi.getInstanceInfo();
+            System.out.println(info.getAppName()+"----"+info.getInstanceId()+"---"+info.getStatus());
+        }
+    }
+    
+    private List<ServiceInstance> getServiceInstances(){
+        List<String> serviceIds=discoveryClient.getServices();
+        List<ServiceInstance> result=new ArrayList<>();
+        for(String sid: serviceIds){
+            result.addAll(discoveryClient.getInstances(sid));
+        }
+        return result;
+    }
 ````
 
+## 9、eureka server集群使用
+### 9.1、基础集群使用
+Eureka Server可以通过运行多个实例，并且互相注册的方式实现高可用部署。eureka实例之间会彼此增量同步注册信息，保持节点数据一致。
 
-## 4、已有配置迁移到配置真中心
+1、eureka server配置
 
-https://github.com/ctripcorp/apollo/wiki/Java%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97#324-%E5%B7%B2%E6%9C%89%E9%85%8D%E7%BD%AE%E8%BF%81%E7%A7%BB
+使用默认配置true；需要向其他节点注册本机信息，以及抓取其他节点的注册信息
+````
+eureka.client.register-with-eureka=true；
+eureka.client.fetchRegistry=ture;
+````
+
+指定其他节点的eureka server的地址信息，多个通过都好分割
+```
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka/,http://localhost:8762/eureka/
+```
+
+2、eureka客户端配置
+向所有的eureka server节点注册服务器信息，
+```
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka/,http://localhost:8762/eureka/
+```
+
+
+### 9.2、集群中分区，机房配置
+
+
+
+
+
 
 ## 5、本地开发模式
 
