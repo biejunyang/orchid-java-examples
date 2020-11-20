@@ -5,7 +5,7 @@
 
 Eureka是一个服务发现组件，解决了传统接口地址硬编码引起的问题。主要作用是能够动态发现服务实例的接口地址。
 
-实现功能：
+Eureka Server实现功能：
 
 ````
 1、提供服务注册和注销API：微服务启动时调用eureka server的服务注册API，注册自己的网络信息；注销时调用eureka server的注销API注销自己注册信息。
@@ -13,8 +13,21 @@ Eureka是一个服务发现组件，解决了传统接口地址硬编码引起�
 2、提供服务发现API：服务消费者调用服务是会调用eureka server的服务发现API获取服务注册表信息（实际上eureka client会定时获取注册表缓存到本地）。
 
 3、服务检查：当服务启动并注册后，会周期性（默认30s）的向eureka server发送心跳表示服务可用；当eureka server在一定时间内（默认90s）没有接收到服务的心跳是，会将该服务注销。
+
+4、Server集群中，节点之间相互同步
 ````
 
+
+Eureka Client实现功能：
+
+````
+1、服务注册/注销：启动时调取注册/注销API注册本身服务实例信息。
+
+2、心跳机制：周期性发送心跳信息给server端
+
+3、健康自检：检查自身的健康状态，并将改状态绑定到心跳信息中。
+
+````
 
 ## 2、pom文件引入
 Eureka Server端
@@ -215,8 +228,11 @@ public class EurekaStateChangeListener {
 ````
 
 ## 9、eureka server集群使用
-### 9.1、基础集群使用
-Eureka Server可以通过运行多个实例，并且互相注册的方式实现高可用部署。eureka实例之间会彼此增量同步注册信息，保持节点数据一致。
+### 9.1、Eureka Server高可用集群部署
+Eureka Server可以通过运行多个实例，并且互相注册的方式实现高可用部署,并且eureka实例之间会彼此增量同步注册信息，保持节点数据一致。
+
+当有服务注册时，两个Eureka-eserver是对等的，它们都存有相同的信息，这就是通过服务器的冗余来增加可靠性，当有一台服 务器宕机了，服务并不会终止，因为另一台服务存有相同的数据。
+
 
 1、eureka server配置
 
@@ -237,8 +253,30 @@ eureka.client.service-url.defaultZone=http://localhost:8761/eureka/,http://local
 eureka.client.service-url.defaultZone=http://localhost:8761/eureka/,http://localhost:8762/eureka/
 ```
 
+3、eureka server运行多个实例，实例之间进行相互注册，相互复制注册表信息，高可用部署时；需注意：
+多个实例的服务名必须一致，保证是同一个服务的多个实例;spring.application.name属性一致,这样实例之间才能相互复制，形成副本。（实际上是eureka.instance.appname配置参数，该参数不指定是会默认去spring.application.name的值）
 
-### 9.2、集群中分区，机房配置
+
+多个实例注册时的域名不能相同；eureka.instance.hostname参数设置；所以一台机器上部署多个实例时，域名不能相同
+
+
+相互复制生成的副本节点会在eureka的控制台界面DS Replicas中显示
+
+
+
+4、集群中Eureka Server节点的同步机制
+集群中的server节点相互注册，相互复制注册表信息，形成副本后会通过同步机制保证节点之间注册表信息的一致性。
+
+当其中一个节点收到注册信息，或者客户端实例发送过来的心跳信息后，会将该信息同步到集群中的其他节点。
+
+5、Eureka Client实例注册到集群中
+eureka客户端实例注册时，默认会注册到```eureka.client.service-url.defaultZone```配置中的**第一个**节点的地址；以及后续向该server节点周期性发送心跳信息。
+该server节点会通过集群的同步机制，将收到的注册信息，还有心跳信息复制到其他节点。
+
+默认会按照顺序选择```eureka.client.service-url.defaultZone```配置中的**_第一个可用节点_**发送心跳，按照顺序选择第一个可用的节点。
+
+
+### 9.2、集群部署中分区，机房配置
 
 
 

@@ -14,33 +14,55 @@ import org.springframework.stereotype.Component;
 @Component
 public class EurekaStateChangeListener {
 
+    /**
+     * 注册中心启动
+     * @param event
+     */
     @EventListener
-    public void listen(EurekaInstanceCanceledEvent event) {
-        //服务下线事件
-        log.info("服务:{}|{}挂了",event.getAppName(),event.getServerId());
+    public void EurekaServerStartedEvent(EurekaServerStartedEvent event){
+//        System.out.println(event.getSource().toString());
+        System.err.println("注册中心启动-----------------------");
+    }
+    /**
+     * 注册中心可用事件
+     * @param event
+     */
+    @EventListener
+    public void EurekaRegistryAvailableEvent(EurekaRegistryAvailableEvent event) {
+//        System.out.println(event.getSource().toString());
+        System.err.println("注册中心可用事件--------------------------");
+    }
+    /**
+     * 服务注册事件
+     * @param event
+     */
+    @EventListener
+    public void EurekaInstanceRegisteredEvent(EurekaInstanceRegisteredEvent event){
+        System.out.println(event.getInstanceInfo().toString());
+        System.err.println("服务注册事件--------------------------------");
+    }
+    /**
+     * 服务下线事件
+     * @param event
+     */
+    @EventListener
+    public void EurekaInstanceCanceledEvent(EurekaInstanceCanceledEvent event) {
+//        System.out.println(event.getServerId());
+//        System.out.println(event.getSource().toString());
+        System.err.println("服务下线事件------------------");
+
+
+    }
+    /**
+     * 服务续约事件
+     * @param event
+     */
+    @EventListener
+    public void EurekaInstanceRenewedEvent(EurekaInstanceRenewedEvent event){
+        System.out.println(event.getServerId());
+//        System.out.println(event.getInstanceInfo().getHealthCheckUrl());
+        System.err.println("服务续约事件---------------------------------");
     }
 
-    @EventListener
-    public void listen(EurekaInstanceRegisteredEvent event) {
-        //服务注册事件
-        log.info("服务:{}|{}注册成功了",event.getInstanceInfo().getAppName(),event.getInstanceInfo().getIPAddr());
-    }
 
-    @EventListener
-    public void listen(EurekaInstanceRenewedEvent event) {
-        //服务续约事件
-        log.info("心跳检测:{}|{}",event.getInstanceInfo().getAppName(),event.getInstanceInfo().getIPAddr());
-    }
-
-    @EventListener
-    public void listen(EurekaRegistryAvailableEvent event) {
-       //注册中心启动事件
-        log.info("EurekaRegistryAvailableEvent");
-    }
-
-    @EventListener
-    public void listen(EurekaServerStartedEvent event) {
-        //Server启动
-        log.info("EurekaServerStartedEvent");
-    }
 }
