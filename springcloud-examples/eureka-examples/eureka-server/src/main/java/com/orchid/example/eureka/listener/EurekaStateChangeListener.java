@@ -47,7 +47,7 @@ public class EurekaStateChangeListener {
      */
     @EventListener
     public void EurekaInstanceCanceledEvent(EurekaInstanceCanceledEvent event) {
-//        System.out.println(event.getServerId());
+        System.out.println(event.getServerId());
 //        System.out.println(event.getSource().toString());
         System.err.println("服务下线事件------------------");
 

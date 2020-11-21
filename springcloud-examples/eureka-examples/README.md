@@ -276,7 +276,7 @@ eureka客户端实例注册时，默认会注册到```eureka.client.service-url.
 默认会按照顺序选择```eureka.client.service-url.defaultZone```配置中的**_第一个可用节点_**发送心跳，按照顺序选择第一个可用的节点。
 
 
-### 9.2、集群部署中分区，机房配置
+## 10、Eureka分区设置
 
 
 

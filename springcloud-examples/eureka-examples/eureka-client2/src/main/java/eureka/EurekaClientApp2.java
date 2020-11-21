@@ -30,6 +30,12 @@ public class EurekaClientApp2 {
     }
 
 
+    @GetMapping("welcome")
+    public String welcome(String name){
+        return restTemplate.getForObject("http://eureka-client/welcome", String.class);
+    }
+
+
 
     @Bean // 自动扫描
     @LoadBalanced //这个注解的意思是在启动时先加载注册中心的域名列表

@@ -1,5 +1,6 @@
 package eureka;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -21,4 +22,14 @@ public class EurekaClientApp {
     public String hello(String name){
         return "<h1>hello,"+name+"</h1>";
     }
+
+    @Value("${eureka.instance.metadata-map.zone:''}")
+    private String zone;
+
+
+    @GetMapping("welcome")
+    public String welcome(){
+        return "<h2>welcome, "+zone+"</h2>";
+    }
+
 }
