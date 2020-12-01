@@ -28,6 +28,7 @@
         <module>weixin-examples</module>
         <module>jsoup-example</module>
         <module>springcloud-examples</module>
+        <module>redis-rate-limiter</module>
     </modules>
     <dependencies>
         <dependency>
