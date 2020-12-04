@@ -29,6 +29,7 @@
         <module>jsoup-example</module>
         <module>springcloud-examples</module>
         <module>redis-rate-limiter</module>
+        <module>rate-limiter</module>
     </modules>
     <dependencies>
         <dependency>

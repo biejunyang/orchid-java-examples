@@ -46,4 +46,13 @@ public class HelloController {
 
     }
 
+
+
+
+    @RateLimiterAnno
+    @GetMapping("/welcome")
+    public Object welcome(){
+        return "welcome";
+    }
+
 }
