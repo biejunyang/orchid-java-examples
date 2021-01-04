@@ -1,14 +1,26 @@
 server:
   port: 8080
 spring:
+#  thymeleaf模板引擎配置
+  thymeleaf:
+    prefix: classpath:/templates/ #模板文件位置
+    suffix: .html #模板文件后缀
+    cache: false #是否启用缓存
+    encoding: utf-8 #编码
+    mode: LEGACYHTML5 #严格的HTML语法校验
+    servlet:
+      content-type: text/html
+#   数据库连接池配置
   datasource:
     url: jdbc:mysql://10.225.12.98:3306/test?Unicode=true&characterEncoding=UTF-8
     username: root
-    password: root
-#  redis:
-#    host: 127.0.0.1
-#    database: 0
-#    password:
+    password: bgi2019$
+
+#   redis配置
+  redis:
+    host: 10.225.12.98
+    database: 9
+    password: bgiredis
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.orchid.miaosha.entity

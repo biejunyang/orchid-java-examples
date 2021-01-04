@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<!--注意：引入thymeleaf的名称空间-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!--<html lang="en">-->
+<head>
+    <meta charset="UTF-8">
+    <title>login</title>
+</head>
+<body>
+<h1>login !!!</h1>
+用户名：<input type="text" id="username"/></br>
+密码：<input type="password" id="userPwd"/>
+<input type="button" value="登录" id="submit_btn" onclick="submit();">
+
+
+
+<script th:src="'https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js'" type="text/javascript"></script>
+<script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js"></script>
+<script>
+    function submit(){
+        let salt="1282efjc923rkd";
+        let pwd=""+salt.charAt(0)+salt.charAt(2)+$("#userPwd").val()+salt.charAt(5)+salt.charAt(4);
+        console.info(pwd);
+        console.info(md5(pwd))
+        $.post("/login",{
+            username: $("#username").val(),
+            password: md5(pwd)
+        },function(data){
+            console.info("result",data);
+            if(data.code == 0){
+                alert("登录成功!")
+            }else{
+                alert(data.message);
+            }
+        });
+    }
+
+</script>
+</body>
+</html>

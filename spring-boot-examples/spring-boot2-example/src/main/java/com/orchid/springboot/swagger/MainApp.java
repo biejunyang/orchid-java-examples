@@ -14,8 +14,10 @@ public class MainApp {
 
 
     @GetMapping("/hello")
-    public String hello(String name){
-        System.out.println(Thread.currentThread().getName()+","+Thread.currentThread().getId());
+    public String hello(String name) throws InterruptedException {
+        System.out.println(Thread.currentThread().getName()+","+Thread.currentThread().getId()+","+System.currentTimeMillis());
+        Thread.sleep(30000);
+        System.out.println("-------结束："+Thread.currentThread().getName()+","+Thread.currentThread().getId()+","+System.currentTimeMillis());
         return "<h1>hello,"+name+"</h1>";
     }
 

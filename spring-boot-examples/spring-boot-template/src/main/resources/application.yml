@@ -10,6 +10,6 @@ spring:
     suffix: .html #模板文件后缀
     cache: false #是否启用缓存
     encoding: utf-8 #编码
-    mode: HTML #严格的HTML语法校验
+    mode: HTML5 #严格的HTML语法校验
     servlet:
       content-type: text/html
