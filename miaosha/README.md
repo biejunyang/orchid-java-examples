@@ -17,3 +17,8 @@
   4、JSR后端参数检验
   
   https://www.cnblogs.com/huanchupkblog/p/12915268.html
+
+
+https://www.pianshen.com/article/25351083549/
+https://segmentfault.com/a/1190000020144445
+https://www.cnblogs.com/z-qinfeng/p/12189877.html
