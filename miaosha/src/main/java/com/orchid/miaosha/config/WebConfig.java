@@ -19,11 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
-//    @Override
-//    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-//        converters.add(0, new MappingJackson2HttpMessageConverter());
-//    }
+    
 
     /**
      * rest请求统一数据格式输出
