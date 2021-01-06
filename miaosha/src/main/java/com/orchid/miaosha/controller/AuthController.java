@@ -1,9 +1,9 @@
 package com.orchid.miaosha.controller;
 
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.orchid.core.http.CodeMessage;
-import com.orchid.core.http.R;
+import com.orchid.miaosha.Exception.MiaoShaException;
+import com.orchid.miaosha.constants.ErrorMsgCode;
 import com.orchid.miaosha.entity.User;
 import com.orchid.miaosha.service.UserService;
 import com.orchid.miaosha.util.PasswordUtil;
@@ -33,26 +33,18 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public R doLogin(@Valid LoginVo loginVo){
+    public String doLogin(@Valid LoginVo loginVo){
         log.info("login info:{}", loginVo.toString());
-//        if(StrUtil.isEmpty(loginVo.getUsername())){
-//            return R.error(CodeMessage.LOGIN_ERROR);
-//        }
-//        if(StrUtil.isEmpty(loginVo.getPassword())){
-//            return R.error(CodeMessage.LOGIN_ERROR);
-//        }
-
         User user=userService.getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, loginVo.getUsername()));
+
         if(user==null){
-            return R.error(CodeMessage.LOGIN_USERNAME_ERROR);
+            throw new MiaoShaException(ErrorMsgCode.LOGIN_USERNAME_ERROR);
         }
         String pwd=PasswordUtil.formPwd2Dbpwd(loginVo.getPassword(), user.getSalt());
         if(!user.getPassword().equals(pwd)){
-            return R.error(CodeMessage.LOGIN_PASSWORD_ERROR);
+            throw new MiaoShaException(ErrorMsgCode.LOGIN_PASSWORD_ERROR);
         }
-
-
-        return R.success();
+        return UUID.fastUUID().toString();
     }
 
 }

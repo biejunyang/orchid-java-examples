@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
 
 @Data
 public class LoginVo {
-    @NotBlank
+    @NotBlank(message = "用户名不能为空")
     @Length(max = 50)
     private String username;
 
