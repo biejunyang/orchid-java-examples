@@ -56,6 +56,12 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <!-- web公共配置-->
+        <dependency>
+            <groupId>com.orchid</groupId>
+            <artifactId>orchid-web</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
     </dependencies>
     <build>

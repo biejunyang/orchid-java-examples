@@ -2,8 +2,8 @@ package com.orchid.miaosha.controller;
 
 import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.orchid.miaosha.Exception.MiaoShaException;
-import com.orchid.miaosha.constants.ErrorMsgCode;
+import com.orchid.core.exception.ExceptionBuilder;
+import com.orchid.miaosha.enums.MiaoshaResultCode;
 import com.orchid.miaosha.entity.User;
 import com.orchid.miaosha.service.UserService;
 import com.orchid.miaosha.util.PasswordUtil;
@@ -38,11 +38,11 @@ public class AuthController {
         User user=userService.getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, loginVo.getUsername()));
 
         if(user==null){
-            throw new MiaoShaException(ErrorMsgCode.LOGIN_USERNAME_ERROR);
+            throw ExceptionBuilder.build(MiaoshaResultCode.LOGIN_USERNAME_ERROR);
         }
         String pwd=PasswordUtil.formPwd2Dbpwd(loginVo.getPassword(), user.getSalt());
         if(!user.getPassword().equals(pwd)){
-            throw new MiaoShaException(ErrorMsgCode.LOGIN_PASSWORD_ERROR);
+            throw ExceptionBuilder.build(MiaoshaResultCode.LOGIN_USERNAME_ERROR);
         }
         return UUID.fastUUID().toString();
     }

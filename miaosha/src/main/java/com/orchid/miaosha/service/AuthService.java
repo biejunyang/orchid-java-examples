@@ -1,11 +1,5 @@
 package com.orchid.miaosha.service;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.orchid.core.http.CodeMessage;
-import com.orchid.core.http.R;
-import com.orchid.miaosha.entity.User;
-import com.orchid.miaosha.util.PasswordUtil;
-import com.orchid.miaosha.vo.LoginVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

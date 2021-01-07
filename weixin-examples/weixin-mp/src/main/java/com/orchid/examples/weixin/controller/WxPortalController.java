@@ -78,7 +78,7 @@ public class WxPortalController {
 //    private WxMpXmlOutMessage route(WxMpXmlMessage message) {
 //        try {
 //            return this.messageRouter.route(message);
-//        } catch (Exception e) {
+//        } catch (exception e) {
 //            log.error("路由消息时出现异常！", e);
 //        }
 //
