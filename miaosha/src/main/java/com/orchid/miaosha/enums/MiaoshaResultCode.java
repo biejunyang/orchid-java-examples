@@ -9,7 +9,10 @@ import com.orchid.core.ResultCode;
 public enum MiaoshaResultCode implements ResultCode {
 
     /*成功状态码*/
-    SUCCESS(1, "success"),
+    SUCCESS(200, "success"),
+
+    /*错误状态码*/
+    SERVER_ERROR(500, "服务器异常"),
 
     /*登录错误码*/
     LOGIN_ERROR(1000, "登录错误"),

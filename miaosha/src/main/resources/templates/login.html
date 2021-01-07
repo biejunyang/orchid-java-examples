@@ -21,17 +21,16 @@
     function submit(){
         let salt="1282efjc923rkd";
         let pwd=""+salt.charAt(0)+salt.charAt(2)+$("#userPwd").val()+salt.charAt(5)+salt.charAt(4);
-        console.info(pwd);
-        console.info(md5(pwd))
         $.post("/login",{
             username: $("#username").val(),
             password: md5(pwd)
         },function(data){
             console.info("result",data);
-            if(data.code == 0){
-                alert("登录成功!")
+            if(data.status == 1){
+                console.info("login success")
+                window.location.href="/goods/list"
             }else{
-                // alert(data.message);
+                alert(data.message);
             }
         });
     }

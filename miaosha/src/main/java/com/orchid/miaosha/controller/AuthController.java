@@ -2,9 +2,11 @@ package com.orchid.miaosha.controller;
 
 import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.orchid.core.Result;
 import com.orchid.core.exception.ExceptionBuilder;
 import com.orchid.miaosha.enums.MiaoshaResultCode;
 import com.orchid.miaosha.entity.User;
+import com.orchid.miaosha.service.AuthService;
 import com.orchid.miaosha.service.UserService;
 import com.orchid.miaosha.util.PasswordUtil;
 import com.orchid.miaosha.vo.LoginVo;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 
@@ -29,22 +32,14 @@ public class AuthController {
 
 
     @Autowired
-    private UserService userService;
+    private AuthService authService;
 
     @PostMapping("/login")
     @ResponseBody
-    public String doLogin(@Valid LoginVo loginVo){
+    public Result<Boolean> doLogin(@Valid LoginVo loginVo, HttpServletResponse response){
         log.info("login info:{}", loginVo.toString());
-        User user=userService.getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, loginVo.getUsername()));
-
-        if(user==null){
-            throw ExceptionBuilder.build(MiaoshaResultCode.LOGIN_USERNAME_ERROR);
-        }
-        String pwd=PasswordUtil.formPwd2Dbpwd(loginVo.getPassword(), user.getSalt());
-        if(!user.getPassword().equals(pwd)){
-            throw ExceptionBuilder.build(MiaoshaResultCode.LOGIN_USERNAME_ERROR);
-        }
-        return UUID.fastUUID().toString();
+        authService.login(loginVo, response);
+        return Result.success(true);
     }
 
 }
