@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,5 +53,10 @@ public class OAuth2AuthServerApp {
         return null;
     }
 
+    @GetMapping("/userinfo2")
+    @ResponseBody
+    public Object userinfo(AbstractAuthenticationToken token) {
+        return token.getPrincipal();
+    }
 
 }
