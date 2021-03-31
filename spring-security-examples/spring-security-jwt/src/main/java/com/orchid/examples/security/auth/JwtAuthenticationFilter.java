@@ -1,6 +1,6 @@
 package com.orchid.examples.security.auth;
 
-import com.orchid.core.http.R;
+import com.orchid.core.Result;
 import com.orchid.web.util.ResponseUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -72,7 +72,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 //        response.setContentType("application/json; charset=utf-8");
 //        String tokenStr = JwtTokenUtils.TOKEN_PREFIX + token;
 //        response.setHeader("token",tokenStr);
-        ResponseUtil.renderJson(response,R.success(UUID.randomUUID().toString()));
+        ResponseUtil.renderJson(response, Result.success(UUID.randomUUID().toString()));
 
     }
 

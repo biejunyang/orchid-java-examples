@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
 #  数据源信息
@@ -25,8 +25,8 @@ spring:
         max-idle: 8
         #        连接池中最小空闲连接数量
         min-idle: 0
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          jwk-set-uri: http://localhost:8080/.well-known/jwks.json
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/.well-known/jwks.json
