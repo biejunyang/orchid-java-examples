@@ -1,6 +1,7 @@
 package com.orchid.examples.springsecurity.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,7 +11,12 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.TokenEnhancer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+
+import java.util.Arrays;
 
 @EnableAuthorizationServer
 @Configuration
@@ -21,12 +27,11 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     private AuthenticationManager authenticationManager;
 
 
-    @Autowired
-    private TokenStore tokenStore;
-
-
-    @Autowired
-    private AccessTokenConverter accessTokenConverter;
+//    @Autowired
+//    private TokenStore tokenStore;
+//
+//    @Autowired
+//    MyJwtAccessTokenConverter jwtAccessTokenConverter;
 
     /**
      * 客户端设置
@@ -81,10 +86,25 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 
-        endpoints.authenticationManager(authenticationManager) //指定用户认证管理器
-                .tokenStore(tokenStore)
-                .accessTokenConverter(accessTokenConverter)
+        endpoints
+                //用户认证
+                .authenticationManager(this.authenticationManager)
+                //Token管理
+                .tokenStore(new InMemoryTokenStore());
+
+
+        super.configure(endpoints);
+
+
+
+//        endpoints.authenticationManager(authenticationManager) //指定用户认证管理器
+//                .tokenStore(tokenStore)
+//                .accessTokenConverter(jwtAccessTokenConverter)
         ;
+        // 设置令牌增强 JWT 转换
+//        TokenEnhancerChain enhancer = new TokenEnhancerChain();
+//        enhancer.setTokenEnhancers(Arrays.asList(jwtAccessTokenConverter));
+//        endpoints.tokenEnhancer(enhancer);
 
         // 配置TokenServices参数
 //        DefaultTokenServices tokenServices = (DefaultTokenServices) endpoints.getDefaultAuthorizationServerTokenServices();
@@ -111,8 +131,6 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .checkTokenAccess("isAuthenticated()")//校验令牌端点需要授权过
                 .allowFormAuthenticationForClients();
     }
-
-
 
 
 

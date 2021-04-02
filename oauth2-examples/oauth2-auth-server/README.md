@@ -178,7 +178,7 @@ ClientDetailsServiceConfigurer：client客户端的信息配置，包括：clien
 ````
 1、TokenGranter对象：令牌的创建方式、实现中会根据授权方式的不同生成不同的Token。
 
-2、TokenStore对象：令牌的存储方式，如：如InMemoryTokenStore内存中存储，JdbcTokenStor e数据库存储，Jwt使用jwt方式存储
+2、TokenStore对象：令牌的存储方式，如：如InMemoryTokenStore内存中存储，JdbcTokenStore数据库存储，Jwt使用jwt方式存储
 
 3、TokenEnhancer对象：令牌的增强处理，
 
@@ -441,6 +441,7 @@ InMemoryTokenStore：这个是OAuth2默认采用的实现方式。在单服务�
 
 
 JdbcTokenStore：这个是基于JDBC的实现，令牌（Access Token）会保存到数据库。这个方式，可以在多个服务之间实现令牌共享。
+
 
 JwtTokenStore：jwt全称 JSON Web Token。这个实现方式不用管如何进行存储（内存或磁盘），因为它可以把相关信息数据编码存放在令牌里。JwtTokenStore 不会保存任何数据，
 但是它在转换令牌值以及授权信息方面与 DefaultTokenServices 所扮演的角色是一样的。但有两个缺点： 

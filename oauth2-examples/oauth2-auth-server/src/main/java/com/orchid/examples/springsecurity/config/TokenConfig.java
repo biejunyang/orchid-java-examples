@@ -37,7 +37,7 @@ import java.util.UUID;
 /**
  * OAuth2 Token Manage Config
  */
-@Configuration
+//@Configuration
 public class TokenConfig {
 
 
@@ -61,8 +61,8 @@ public class TokenConfig {
      * @return
      */
     @Bean
-    public TokenStore tokenStore(JwtAccessTokenConverter jwtAccessTokenConverter) {
-        return new JwtTokenStore(jwtAccessTokenConverter);
+    public TokenStore tokenStore(KeyPair keyPair) {
+        return new JwtTokenStore(jwtAccessTokenConverter(keyPair));
     }
 
 
@@ -71,21 +71,23 @@ public class TokenConfig {
      * @param keyPair
      * @return
      */
-    @Bean
-    public JwtAccessTokenConverter accessTokenConverter(KeyPair keyPair) {
-        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+    @Bean("jwtAccessTokenConverter")
+    public JwtAccessTokenConverter jwtAccessTokenConverter(KeyPair keyPair) {
+        JwtAccessTokenConverter converter = new MyJwtAccessTokenConverter();
 
         converter.setKeyPair(keyPair);
 
         //对称加密签名
 //        converter.setSigningKey("123456");
 //
-        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
-        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
-        converter.setAccessTokenConverter(accessTokenConverter);
+//        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
+//        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+//        converter.setAccessTokenConverter(accessTokenConverter);
 
         return converter;
     }
+
+
 
 
 
