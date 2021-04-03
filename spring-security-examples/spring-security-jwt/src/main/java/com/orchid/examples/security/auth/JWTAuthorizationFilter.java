@@ -1,9 +1,9 @@
 package com.orchid.examples.security.auth;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.orchid.core.http.R;
-import com.orchid.core.jwt.JwtTokenUtil;
-import com.orchid.core.jwt.exception.JwtTokenException;
+import com.orchid.core.Result;
+import com.orchid.core.exception.JwtTokenException;
+import com.orchid.core.util.JwtTokenUtil;
 import com.orchid.web.util.ResponseUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,14 +40,14 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
                         return;
                     } catch (JwtTokenException e) {
 //                    e.printStackTrace();
-                        ResponseUtil.renderJson(response, R.error(e.getMessage()));
+                        ResponseUtil.renderJson(response, Result.error(e.getMessage()));
                         return;
                     }
                 } else {
-                    ResponseUtil.renderJson(response, R.error("invalid token", null));
+                    ResponseUtil.renderJson(response, Result.error("invalid token"));
                 }
             } else {
-                ResponseUtil.renderJson(response, R.error("未登录"));
+                ResponseUtil.renderJson(response, Result.error("未登录"));
             }
         }
     }

@@ -2,7 +2,7 @@ package com.security.jwt;
 
 
 import com.nimbusds.jose.JOSEException;
-import com.orchid.core.jwt.JwtTokenUtil;
+import com.orchid.core.util.JwtTokenUtil;
 import org.junit.Test;
 
 import java.text.ParseException;
