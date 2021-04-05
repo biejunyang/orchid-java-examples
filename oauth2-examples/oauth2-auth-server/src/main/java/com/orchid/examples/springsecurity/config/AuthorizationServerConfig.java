@@ -5,18 +5,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @EnableAuthorizationServer
 @Configuration
@@ -89,11 +94,32 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         endpoints
                 //用户认证
                 .authenticationManager(this.authenticationManager)
+//                .tokenStore(new InMemoryTokenStore())
+//                .tokenEnhancer(new MyTokenEnhancer())
+                .accessTokenConverter(new AccessTokenConverter() {
+
+                    @Override
+                    public Map<String, ?> convertAccessToken(OAuth2AccessToken oAuth2AccessToken, OAuth2Authentication oAuth2Authentication) {
+                        Map<String, Object> result=new HashMap<>();
+                        result.put("val", oAuth2AccessToken.getValue());
+                        result.put("type", oAuth2AccessToken.getTokenType());
+                        return result;
+                    }
+
+                    @Override
+                    public OAuth2AccessToken extractAccessToken(String s, Map<String, ?> map) {
+                        return null;
+                    }
+
+                    @Override
+                    public OAuth2Authentication extractAuthentication(Map<String, ?> map) {
+                        return null;
+                    }
+                })
+
                 //Token管理
-                .tokenStore(new InMemoryTokenStore());
-
-
-        super.configure(endpoints);
+//                .tokenStore(new InMemoryTokenStore());
+        ;
 
 
 
@@ -106,7 +132,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 //        enhancer.setTokenEnhancers(Arrays.asList(jwtAccessTokenConverter));
 //        endpoints.tokenEnhancer(enhancer);
 
-        // 配置TokenServices参数
+        // 配置TokenServices参数（完全自定义TOken管理对象）
 //        DefaultTokenServices tokenServices = (DefaultTokenServices) endpoints.getDefaultAuthorizationServerTokenServices();
 //        tokenServices.setTokenStore(endpoints.getTokenStore());
 //        tokenServices.setSupportRefreshToken(true);
@@ -131,6 +157,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .checkTokenAccess("isAuthenticated()")//校验令牌端点需要授权过
                 .allowFormAuthenticationForClients();
     }
+
+
+
 
 
 
