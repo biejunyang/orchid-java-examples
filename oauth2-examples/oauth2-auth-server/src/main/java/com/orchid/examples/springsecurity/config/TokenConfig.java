@@ -1,26 +1,18 @@
 package com.orchid.examples.springsecurity.config;
 
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.jwt.crypto.sign.MacSigner;
-import org.springframework.security.jwt.crypto.sign.Signer;
 import org.springframework.security.oauth2.provider.endpoint.FrameworkEndpoint;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.DefaultUserAuthenticationConverter;
 import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
-import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -37,27 +29,38 @@ import java.util.UUID;
 /**
  * OAuth2 Token Manage Config
  */
-//@Configuration
+@Configuration
 public class TokenConfig {
 
 
+    /**
+     * 方式1：Token对象存储在本地内存中
+     * @return
+    @Bean
+    public TokenStore tokenStore(){
+        return new InMemoryTokenStore();
+    }
+
+     */
+
+
+    /**
+     * 方式2：Token对象存储在Redis中
+     */
 //    @Autowired
 //    private RedisConnectionFactory redisConnectionFactory;
 //
 //
+//    @Bean
 //    public TokenStore tokenStore(){
 //        return new RedisTokenStore(redisConnectionFactory);
 //    }
 
 
-//    @Bean
-//    public TokenStore tokenStore(){
-//        return new InMemoryTokenStore();
-//    }
 
     /**
-     * Token Store Bean
-     * @param jwtAccessTokenConverter
+     * 方式3：Jwt Token存储
+     * @param keyPair
      * @return
      */
     @Bean
@@ -71,18 +74,18 @@ public class TokenConfig {
      * @param keyPair
      * @return
      */
-    @Bean("jwtAccessTokenConverter")
+    @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter(KeyPair keyPair) {
-        JwtAccessTokenConverter converter = new MyJwtAccessTokenConverter();
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
 
         converter.setKeyPair(keyPair);
 
         //对称加密签名
 //        converter.setSigningKey("123456");
 //
-//        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
-//        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
-//        converter.setAccessTokenConverter(accessTokenConverter);
+        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
+        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+        converter.setAccessTokenConverter(accessTokenConverter);
 
         return converter;
     }
