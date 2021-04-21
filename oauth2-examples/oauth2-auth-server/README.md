@@ -598,7 +598,7 @@ class SubjectAttributeUserTokenConverter extends DefaultUserAuthenticationConver
 
 ### 总之：
 
-令牌存储在内存中是使用方便，但应用中使用良好，不适合高并发，集群部署
+令牌存储在内存中是使用方便，但应用中使用良好，不适合高并发，集群部署内；并且不能持久化，当服务重启时，全部token失效
 
 令牌存储在数据库中时，效率太低，令牌校验时需要访问数据库，高并发下数据库的压力太大
 
