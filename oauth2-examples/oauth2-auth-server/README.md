@@ -661,12 +661,322 @@ class JwkSetEndpoint {
 }
 ```
 
-## 8、参考
-JSOE框架：https://blog.csdn.net/peterwanghao/article/details/98534636
 
-nimbus jwt框架：https://connect2id.com/products/nimbus-jose-jwt/examples
 
-JWT说明：http://blog.leapoahead.com/2015/09/06/understanding-jwt/
 
-JWT官网：https://jwt.io/
+## 8、客户端认证
+OAuth2授权是对第三方应用客户端授予权限访问受认证服务器保护的资源，所以授权时首先需要对申请token的客户端进行认证（校验client_id和client_secret的正确性）。
+
+Spring Cloud OAuth2默认使用Basic认证来校验客户端；使用BasicAuthenticationFilter过滤器来校验client_id和client_secret。
+
+同时支持使用表单认证的方式来认证客户端，client_id和client_secret当做请求参数提交到后台进行校验。实现过滤器是ClientCredentialsTokenEndpointFilter。
+
+开启客户端表单认证：
+```
+@Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        security.allowFormAuthenticationForClients()
+        ;
+    }
+```
+开启客户表单认证后，并且当请求URL中含有client_id和client_secret参数时才会走客户点表单认证（ClientCredentialsTokenEndpointFilter）；否则任然走客户端Basic认证
+
+自定义客户端认证：使用自定义认证过滤器或者内置的Basic认证和ClientCredentialsTokenEndpointFilter，如：
+````
+security.addTokenEndpointAuthenticationFilter(new ClientCredentialsTokenEndpointFilter());
+````
+
+
+
+## 9、认证授权流程（密码模式为例）
+
+1、客户端认证：Basic认证(认证)或者客户端表单认证(ClientCredentialsTokenEndpointFilter)
+
+2、进入/oauth/token端点（TokenEndpoint）获取token
+
+3、请求参数校验如grant_type授权模式；scope权限参数
+
+4、用户认证，用户名，密码，手否锁定，过期等校验
+
+5、全部校验成功，则返回token信息，校验失败则进行授权失败处理流程
+
+
+
+
+## 10、认证失败异常处理
+
+Spring cloud OAuth2认证失败常见异常：
+````
+1、客户端认证失败异常，默认返回401状态码和数据{"error":"invalid_client","error_description":"Bad client credentials"}
+2、用户认证失败异常，如用户名或密码错误返回401状态码，请求参数错误返回400状态码，请求方式(支持POST)错误返回405状态码
+````
+
+注意：Spring Security认证过程中认证失败抛出异常时，默认都对异常进行了捕获和处理，我**们无法使用全局异常处理@RestControllerAdvice来捕获异常来进行处理**。
+
+如客户端认证异常发生在客户端认证过滤器中如BasicAuthenticationFilter或ClientCredentialsTokenEndpointFilter中；认证发生异常后直接异常处理后返回。都还没有进入到DispatcherServlet请求处理流程(Controller)；Spring Boot的统一异常处理是在DispatchServlet中捕获后统一处理，所以这里获取不到。
+
+用户认证失败异常是发生在认证端点如TokenEndpoint中，正常可以在@ControllerAdvice中统一异常处理，但是Spring Cloud认证端点中对相关的异常已经进行了捕获和处理，所以会在进入到ControllerAdvice异常处理中，如：
+
+TokenEndpint异常处理,使用异常处理器来处理异常ExceptionTranslator
+```java
+@FrameworkEndpoint
+public class TokenEndpoint extends AbstractEndpoint {
+    private OAuth2RequestValidator oAuth2RequestValidator = new DefaultOAuth2RequestValidator();
+    private Set<HttpMethod> allowedRequestMethods;
+
+    public TokenEndpoint() {
+        this.allowedRequestMethods = new HashSet(Arrays.asList(HttpMethod.POST));
+    }
+
+    @RequestMapping(
+        value = {"/oauth/token"},
+        method = {RequestMethod.GET}
+    )
+    public ResponseEntity<OAuth2AccessToken> getAccessToken(Principal principal, @RequestParam Map<String, String> parameters) throws HttpRequestMethodNotSupportedException {
+        if (!this.allowedRequestMethods.contains(HttpMethod.GET)) {
+            throw new HttpRequestMethodNotSupportedException("GET");
+        } else {
+            return this.postAccessToken(principal, parameters);
+        }
+    }
+
+    @RequestMapping(
+        value = {"/oauth/token"},
+        method = {RequestMethod.POST}
+    )
+    public ResponseEntity<OAuth2AccessToken> postAccessToken(Principal principal, @RequestParam Map<String, String> parameters) throws HttpRequestMethodNotSupportedException {
+        if (!(principal instanceof Authentication)) {
+            throw new InsufficientAuthenticationException("There is no client authentication. Try adding an appropriate authentication filter.");
+        } else {
+            String clientId = this.getClientId(principal);
+            ClientDetails authenticatedClient = this.getClientDetailsService().loadClientByClientId(clientId);
+            TokenRequest tokenRequest = this.getOAuth2RequestFactory().createTokenRequest(parameters, authenticatedClient);
+            if (clientId != null && !clientId.equals("") && !clientId.equals(tokenRequest.getClientId())) {
+                throw new InvalidClientException("Given client ID does not match authenticated client");
+            } else {
+                if (authenticatedClient != null) {
+                    this.oAuth2RequestValidator.validateScope(tokenRequest, authenticatedClient);
+                }
+
+                if (!StringUtils.hasText(tokenRequest.getGrantType())) {
+                    throw new InvalidRequestException("Missing grant type");
+                } else if (tokenRequest.getGrantType().equals("implicit")) {
+                    throw new InvalidGrantException("Implicit grant type not supported from token endpoint");
+                } else {
+                    if (this.isAuthCodeRequest(parameters) && !tokenRequest.getScope().isEmpty()) {
+                        this.logger.debug("Clearing scope of incoming token request");
+                        tokenRequest.setScope(Collections.emptySet());
+                    }
+
+                    if (this.isRefreshTokenRequest(parameters)) {
+                        tokenRequest.setScope(OAuth2Utils.parseParameterList((String)parameters.get("scope")));
+                    }
+
+                    OAuth2AccessToken token = this.getTokenGranter().grant(tokenRequest.getGrantType(), tokenRequest);
+                    if (token == null) {
+                        throw new UnsupportedGrantTypeException("Unsupported grant type: " + tokenRequest.getGrantType());
+                    } else {
+                        return this.getResponse(token);
+                    }
+                }
+            }
+        }
+    }
+
+   
+    @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
+    public ResponseEntity<OAuth2Exception> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) throws Exception {
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("Handling error: " + e.getClass().getSimpleName() + ", " + e.getMessage());
+        }
+
+        return this.getExceptionTranslator().translate(e);
+    }
+
+    @ExceptionHandler({Exception.class})
+    public ResponseEntity<OAuth2Exception> handleException(Exception e) throws Exception {
+        if (this.logger.isErrorEnabled()) {
+            this.logger.error("Handling error: " + e.getClass().getSimpleName() + ", " + e.getMessage(), e);
+        }
+
+        return this.getExceptionTranslator().translate(e);
+    }
+
+    @ExceptionHandler({ClientRegistrationException.class})
+    public ResponseEntity<OAuth2Exception> handleClientRegistrationException(Exception e) throws Exception {
+        if (this.logger.isWarnEnabled()) {
+            this.logger.warn("Handling error: " + e.getClass().getSimpleName() + ", " + e.getMessage());
+        }
+
+        return this.getExceptionTranslator().translate(new BadClientCredentialsException());
+    }
+
+    @ExceptionHandler({OAuth2Exception.class})
+    public ResponseEntity<OAuth2Exception> handleException(OAuth2Exception e) throws Exception {
+        if (this.logger.isWarnEnabled()) {
+            this.logger.warn("Handling error: " + e.getClass().getSimpleName() + ", " + e.getMessage());
+        }
+
+        return this.getExceptionTranslator().translate(e);
+    }
+
+    //.............
+}
+
+```
+
+
+
+### 10.1、自定义客户端认证失败处理
+
+客户端认证处理在过滤器BasicAuthenticationFilter或者ClientCredentialsTokenEndpointFilter中实现，认证失败后，过滤器会将认证异常交个AuthenticationEntryPoint来处理（**Spring Security认证处理流程**），如：
+
+表单认证异常处理：认证失败调用AuthenticationFailureHandler认证失败处理器处理异常，该认证失败处理器调用AuthenticationEntryPoint对象来处理异常，默认实现对象是AuthenticationEntryPoint。
+```
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
+        this.setAuthenticationFailureHandler(new AuthenticationFailureHandler() {
+            public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+                if (exception instanceof BadCredentialsException) {
+                    exception = new BadCredentialsException(((AuthenticationException)exception).getMessage(), new BadClientCredentialsException());
+                }
+
+                ClientCredentialsTokenEndpointFilter.this.authenticationEntryPoint.commence(request, response, (AuthenticationException)exception);
+            }
+        });
+        this.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
+            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+            }
+        });
+    }
+```
+
+Basic认证异常处理，同样也是会调用AuthenticationEntryPoint对象来处理异常，认证失败后，会默认跳转到登录页面
+
+
+
+自定义认证失败处理：
+1、不能使用默认的ClientCredentialsTokenEndpointFilter过滤器对象，所以不开启默认客户端表单认证，**去掉该代码**：
+```
+//security.allowFormAuthenticationForClients();
+```
+
+2、设置自定义认证过滤器对象，继承ClientCredentialsTokenEndpointFilter实现对象，且配置自定义的认证失败处理器，如:
+
+自定义客户端认证处理
+```
+public class CustomClientCredentialsTokenEndpointFilter extends ClientCredentialsTokenEndpointFilter {
+
+    private AuthorizationServerSecurityConfigurer configurer;
+    
+    private AuthenticationEntryPoint authenticationEntryPoint;
+
+    public CustomClientCredentialsTokenEndpointFilter(AuthorizationServerSecurityConfigurer configurer) {
+        this.configurer = configurer;
+    }
+
+    @Override
+    public void setAuthenticationEntryPoint(AuthenticationEntryPoint authenticationEntryPoint) {
+        // 把父类的干掉
+        super.setAuthenticationEntryPoint(null);
+        this.authenticationEntryPoint = authenticationEntryPoint;
+    }
+
+
+    //认证过滤器中，必须要注入人认证管理器对象
+    @Override
+    protected AuthenticationManager getAuthenticationManager() {
+        return configurer.and().getSharedObject(AuthenticationManager.class);
+    }
+
+    //设置认证失败，和认证成功处理器，认证失败调用AuthenticationEntryPoint对象进行失败处理
+    @Override
+    public void afterPropertiesSet() {
+        setAuthenticationFailureHandler(new AuthenticationFailureHandler() {
+            @Override
+            public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
+                authenticationEntryPoint.commence(httpServletRequest, httpServletResponse, e);
+            }
+
+        });
+        setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
+            @Override
+            public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
+                // 无操作-仅允许过滤器链继续到令牌端点
+            }
+        });
+    }
+}
+```
+添加自定义认证处理器，如：
+```java
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        AuthenticationEntryPoint authenticationEntryPoint=new AuthenticationEntryPoint() {
+            @Override
+            public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
+                e.printStackTrace();
+                httpServletResponse.getWriter().print("failed");
+            }
+        };
+        CustomClientCredentialsTokenEndpointFilter endpointFilter = new CustomClientCredentialsTokenEndpointFilter(security);
+        endpointFilter.afterPropertiesSet();
+        endpointFilter.setAuthenticationEntryPoint(authenticationEntryPoint);
+        security.addTokenEndpointAuthenticationFilter(endpointFilter);
+        
+        security
+            // jwt获取令牌key端点不要认证
+            .tokenKeyAccess("permitAll()")
+            //校验令牌端点需要授权过
+            .checkTokenAccess("isAuthenticated()")
+//            .allowFormAuthenticationForClients()
+        ;
+
+    }
+```
+
+Basic认证同理
+
+
+### 10.2、自定义用户认证失败处理
+
+用户认证失败异常默认是在端点对象本地@ExceptionHandler进行异常处理的，本地异常处理时回调用异常处理器ExceptionTranslator对象来处理不同类型的异常，我们只需要自定义异常处理器对象即可，如：
+
+
+````
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        //指定用户认证管理器
+        endpoints.authenticationManager(authenticationManager)
+	            .tokenStore(tokenStore)
+                .accessTokenConverter(accessTokenConverter)
+                //认证失败
+                .exceptionTranslator(new WebResponseExceptionTranslator<OAuth2Exception>() {
+                    @Override
+                    public ResponseEntity<OAuth2Exception> translate(Exception e) throws Exception {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+        ;
+    }
+````
+
+
+## 11、WebSecurityConfig和ResourceServerConfig安全配置都存在时注意：
+a、@EnableResourceServer默认会保护所有请求，内置端点除外(@FrameworkEndpoint注解定义)，也可以自定义指定保护的请求资源，如：
+```
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+//        super.configure(http);
+        http.antMatcher("/user/**").authorizeRequests().anyRequest().authenticated();
+    }
+```
+
+b、WebSecurityConfig安全约束配置，对所有请求都有效，包含内置端点请求。**_并且配置类优先级较高，所有会被ResourceServerConfig的配置覆盖_**。
+
+
+
+## 12、参考
+https://www.cnblogs.com/haoxianrui/p/14028366.html
 

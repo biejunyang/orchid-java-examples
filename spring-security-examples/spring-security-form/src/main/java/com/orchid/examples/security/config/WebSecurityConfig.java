@@ -101,13 +101,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     }
                 }).and().and()
             .exceptionHandling()
-                .accessDeniedHandler(new AccessDeniedHandler() {
-                    @Override
-                    public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AccessDeniedException e) throws IOException, ServletException {
-                        System.out.println("xxxxxxxxxxxxxxxxxxxxxx");
-                    }
+                .authenticationEntryPoint((httpServletRequest, httpServletResponse, e) -> {
+
                 })
-        ;
+                .accessDeniedHandler((httpServletRequest, httpServletResponse, e) -> System.out.println("xxxxxxxxxxxxxxxxxxxxxx"))
+            ;
 
 //        CodeAuthenticationProcessingFilter codeFilter=new CodeAuthenticationProcessingFilter();
 //        codeFilter.setAuthenticationManager(this.authenticationManagerBean());
