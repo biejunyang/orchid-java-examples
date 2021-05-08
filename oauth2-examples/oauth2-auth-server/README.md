@@ -963,7 +963,145 @@ Basic认证同理
 ````
 
 
-## 11、WebSecurityConfig和ResourceServerConfig安全配置都存在时注意：
+
+## 12、自定义Token返回数据格式
+
+Spring Cloud OAuth2默认使用TokenEndpoint.postAccessToken()请求端点返回Token数据。默认返回的数据类型DefaultOAuth2AccessToken；并且返回json数据时，底层使用了内置的序列化来序列化DefaultOAuth2AccessToken对象。
+
+默认返回的数据格式：
+````
+{
+    "access_token": "aaxcxcxccx",
+    "token_type": "bearer",
+    "refresh_token": "xxcxcxc",
+    "expires_in": 3599,
+    "scope": "server base",
+    "jti": "cce3e270-3d0b-48f5-b4b0-eeccf928bc14"
+}
+````
+可以自定义统一的数据返回格式。
+
+### 12.1、使用@RestControllerAdvice+ResponseBodyAdvice实现来统一数据返回格式
+```java
+
+@RestControllerAdvice
+public class GlobalControllerAdvice implements ResponseBodyAdvice {
+
+    /**
+     * 不需要统一格式输出的端点：
+     * "/oauth/token_key","/.well-known/jwks.json","/oauth/check_token"
+     */
+    private static List<String> excludeNames= Arrays.asList("TokenKeyEndpoint.getKey","JwkSetEndpoint.getKey","CheckTokenEndpoint.checkToken");
+
+
+    @Override
+    public boolean supports(MethodParameter methodParameter, Class aClass) {
+        return true;
+    }
+
+    /**
+     * restful请求统一格式输出
+     * @param body
+     * @param methodParameter
+     * @param mediaType
+     * @param aClass
+     * @param serverHttpRequest
+     * @param serverHttpResponse
+     * @return
+     */
+    @Override
+    public Object beforeBodyWrite(Object body, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
+        if(body instanceof Result){
+            return body;
+        }else if(body instanceof Map && ((Map) body).containsKey("error")){
+            throw ExceptionBuilder.build(Integer.valueOf(((Map) body).get("status").toString()), ((Map) body).get("message").toString());
+        }
+
+        //不需要统一格式输出的
+        if(!match(methodParameter)){
+            return body;
+        }
+
+        Result result=Result.success(body);
+        if(body instanceof String){
+            serverHttpResponse.getHeaders().setContentType(MediaType.APPLICATION_JSON_UTF8);
+            return JSONUtil.toJsonStr(result);
+        }
+        return result;
+    }
+
+
+
+    /**
+     * 判断需要统一格式数据的请求
+     * @param methodParameter
+     * @return
+     */
+    private boolean match(MethodParameter methodParameter){
+        String methodName=methodParameter.getMethod().getName();
+        String controllerName=methodParameter.getMember().getDeclaringClass().getSimpleName();
+        String fullName=controllerName+"."+methodName;
+        if(excludeNames.contains(fullName)) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+}
+
+```
+
+注意：
+Spring Cloud OAuth2中有些内置的端点，如"/oauth/token_key","/.well-known/jwks.json","/oauth/check_token"是不需要返回格式返回的。
+否则资源服务使用这个端点进行Token校验时会失败，需要实现对应的Token数据解析方式。
+
+
+
+### 12.2、重写/oauth/token端点实现自定义数据格式返回
+
+```
+@RestController
+@RequestMapping("/oauth")
+public class OauthController {
+
+    @Autowired
+    private TokenEndpoint tokenEndpoint;
+
+    @GetMapping("/token")
+    public Result getAccessToken(Principal principal, @RequestParam Map<String, String> parameters) throws HttpRequestMethodNotSupportedException {
+        return custom(tokenEndpoint.getAccessToken(principal, parameters).getBody());
+    }
+
+    @PostMapping("/token")
+    public Result postAccessToken(Principal principal, @RequestParam Map<String, String> parameters) throws HttpRequestMethodNotSupportedException {
+        return custom(tokenEndpoint.postAccessToken(principal, parameters).getBody());
+    }
+
+    //自定义返回格式
+    private Result custom(OAuth2AccessToken accessToken) {
+        DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) accessToken;
+        Map<String, Object> data = new LinkedHashMap(token.getAdditionalInformation());
+        data.put("accessToken", token.getValue());
+        if (token.getRefreshToken() != null) {
+            data.put("refreshToken", token.getRefreshToken().getValue());
+        }
+        return Result.build(data);
+    }
+
+}
+```
+
+
+
+
+
+
+
+
+
+## 13、WebSecurityConfig和ResourceServerConfig安全配置都存在时注意：
 a、@EnableResourceServer默认会保护所有请求，内置端点除外(@FrameworkEndpoint注解定义)，也可以自定义指定保护的请求资源，如：
 ```
     @Override

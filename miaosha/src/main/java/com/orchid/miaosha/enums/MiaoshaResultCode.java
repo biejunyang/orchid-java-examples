@@ -8,6 +8,10 @@ import com.orchid.core.ResultCode;
  */
 public enum MiaoshaResultCode implements ResultCode {
 
+    @Override
+    public String msg() {
+        return message;
+    }
     /*成功状态码*/
     SUCCESS(200, "success"),
 
@@ -33,8 +37,4 @@ public enum MiaoshaResultCode implements ResultCode {
         return code;
     }
 
-    @Override
-    public String msg() {
-        return message;
-    }
 }
