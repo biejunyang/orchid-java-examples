@@ -30,6 +30,7 @@
         <module>springcloud-examples</module>
         <module>redis-rate-limiter</module>
         <module>rate-limiter</module>
+        <module>threadPool-example</module>
     </modules>
     <dependencies>
         <dependency>
