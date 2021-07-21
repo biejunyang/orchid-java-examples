@@ -5,9 +5,9 @@ spring:
   application:
     name: orchid-supply
   datasource:
-    url: jdbc:mysql://10.225.12.98:3306/test?useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&useSSL=false
-    username: root
-    password: root
+    url: jdbc:mysql://xxxxxx:3306/test?useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&useSSL=false
+    username: xxxxx
+    password: xxxxx
 
 mybatis-plus:
   configuration:

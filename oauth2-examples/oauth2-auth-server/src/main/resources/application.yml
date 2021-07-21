@@ -4,14 +4,14 @@ server:
 spring:
 #  数据源信息
   datasource:
-    url: jdbc:mysql://10.225.12.120:3306/test?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
-    username: root
-    password: bgi2019$
+    url: jdbc:mysql://xxxx:3306/test?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull
+    username: xx
+    password: x
     driver-class-name: com.mysql.jdbc.Driver
 #  redis:
-#    host:  10.225.12.98
+#    host:  xxxxx
 #    port: 6379
-#    password: bgiredis
+#    password: xxxxxx
 #    #    数据库模式指定，0~15一共16个模式，默认选择0
 #    database: 8
 #    #    spring boot2中默认使用lettuce作为redis客户端

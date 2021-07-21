@@ -12,15 +12,15 @@ spring:
       content-type: text/html
 #   数据库连接池配置
   datasource:
-    url: jdbc:mysql://10.225.12.98:3306/test?Unicode=true&characterEncoding=UTF-8
-    username: root
-    password: bgi2019$
+    url: jdbc:mysql://xxxxx:3306/test?Unicode=true&characterEncoding=UTF-8
+    username: xxxx
+    password: xxxx
 
 #   redis配置
   redis:
-    host: 10.225.12.98
+    host: xxxxx
     database: 9
-    password: bgiredis
+    password: xxxx
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.orchid.miaosha.entity
